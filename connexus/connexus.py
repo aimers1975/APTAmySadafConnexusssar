@@ -11,6 +11,8 @@ import json
 import cgi
 import urllib
 import re
+import jinja2
+import os
 
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -255,6 +257,28 @@ class Report(webapp2.RequestHandler):
 		result = json.dumps(payload)
 		self.response.write(result)
 
+from google.appengine.api import mail
+jinja_environment = jinja2.Environment(autoescape=True,loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
+
+class email(webapp2.RequestHandler):
+  template = jinja_environment.get_template('email.html')
+  def get(self):
+    self.response.out.write(self.template.render())
+  def post(self):
+  # get email info
+    emailAddress=self.request.get("toEmail")
+    emailSubject=self.request.get("subject")
+    emailMessage=self.request.get("message")
+    message=mail.EmailMessage(sender="sh.sadaf@gmail.com",subject=emailSubject)
+
+    if not mail.is_email_valid(emailAddress):
+      self.response.out.write("Email address is not valid.")
+
+    message.to = emailAddress
+    message.body="""%s""" %(emailMessage)
+    message.send()
+    self.response.out.write("Message sent successfully!")
+
 application = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/GetStreamData', GetStreamData),
@@ -270,5 +294,6 @@ application = webapp2.WSGIApplication([
     ('/GetMostViewedStreams', GetMostViewedStreams),
     ('/gcswrite', GCSHandler),
     ('/gcs/serve', GCSServingHandler),
-    ('/Report', Report)
+    ('/Report', Report),
+    ('/email', email)
 ], debug=True)
