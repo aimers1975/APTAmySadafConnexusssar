@@ -1,1 +1,0 @@
-{"subscriberlist": ["subscriber1", "subscriber2"], "url": "amy@yahoo.com", "streamname": "amystream", "userid": 1234, "taglist": ["tag1", "tag2"]}
