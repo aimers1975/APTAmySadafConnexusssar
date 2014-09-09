@@ -5,6 +5,8 @@ from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
+from datetime import datetime
+from time import gmtime, strftime
 import cloudstorage as gcs
 import webapp2
 import logging
@@ -14,6 +16,7 @@ import urllib
 import re
 import jinja2
 import os
+import uuid
 
 #Probably not necessary to change default retry params, but here for example
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
@@ -22,6 +25,8 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
+mystreams = list()
+myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -103,13 +108,13 @@ def delete_files():
         pass
 
 class MainPage(webapp2.RequestHandler):
-
-    def get(self):
-    	user = users.get_current_user()
-    	if user:
-    		self.response.write(MAIN_PAGE_HTML)
-    	else:
-    		self.redirect(users.create_login_url(self.request.uri))
+  def get(self):
+    user = users.get_current_user()
+    logging.info("Current user is: " + str(user))
+    if user:
+      self.response.write(MAIN_PAGE_HTML)
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
 
 class GCSHandler(webapp2.RequestHandler):
   def get(self):
@@ -177,21 +182,40 @@ class GetStreamData(webapp2.RequestHandler):
 
 
 class CreateStream(webapp2.RequestHandler):
-   #Eventually this will create the stream, for now it retrieves 
-   #the json data from the post request and logs the json
-   #data received to the console.  This is hardcoded to return 
-   #json object with the error code which currently means nothing.
-   def post(self):
-   	   data = json.loads(self.request.body)
-   	   logging.info('this is what Im looking for: ' + str(data))
-   	   #get inputs
-   	   #create stream object
-   	   #capture stream creation time
-   	   #store stream to datastore
-   	   #keys?
-   	   payload = {'errorcode':1}
-   	   result = json.dumps(payload)
-   	   self.response.write(result)
+  def post(self):
+    try:
+      data = json.loads(self.request.body)
+      logging.info('Json data sent to this function: ' + str(data))
+      streamid = str(uuid.uuid1())
+      logging.info('\nStreamid: ' + streamid)
+      streamname = data['streamname']
+      logging.info('\nStreamname: ' + streamname)
+      streamsubscribers = data['subscribers']
+      logging.info('\nstreamsubcribers: ' + str(streamsubscribers))
+      taglist = data ['tags']
+      logging.info('\nTaglist: ' + str(taglist))
+      creationdate = datetime.now()
+      logging.info('\nCreation date: ' + str(creationdate))
+      owner = users.get_current_user()
+      logging.info('\nOwner: ' + str(owner))
+      viewdatelist = list()
+      logging.info('\nViewdatelist: ' + str(viewdatelist))
+      commentlist = list()
+      logging.info('\nCommentlist: ' + str(commentlist))
+      coverimage = 'coverimage'
+      logging.info('\nCoverimage: ' + str(coverimage))
+      imagelist = list()
+      logging.info('\nImagelist: ' + str(imagelist))
+      #create stream object
+      thisstream = {'streamid':streamid,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
+      #store stream
+      mystreams.append(thisstream)
+      logging.info("My current stream list is: " + str(len(mystreams)))
+      payload = {'errorcode':0}
+    except:
+      payload = {'errorcode':1}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class ChooseImage(webapp2.RequestHandler):
   def get(self):
@@ -278,19 +302,28 @@ class UploadImage(webapp2.RequestHandler):
     encodedimage = data['uploadimage']
     streamid = data['streamid']
     contenttype = data['contenttype']
-    #decode the image
+    imagefilename = data['filename']
+    comments = data['comments']
+        #decode the image
     imagefile = encodedimage.decode('base64')
+    #create an ID for the image
+    imageid = str(uuid.uuid1())
+    #does stream exist? if not exit
     bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
     self.response.headers['Content-Type'] = 'text/plain'
-    self.response.write('Testing uploade image, about to write imagefile to datastore\n ')
+    self.response.write('Testing uploade image, about to write ' + imagefilename + ' imagefile to datastore\n ')
     self.response.write('Using bucket name: ' + bucket_name + 'Writing file for streamid: ' + streamid + '\n\n')
-    #create location string for image    
+    #create location string for image   
     bucket = '/' + bucket_name
-    filename = bucket + '/' + streamid
+    filename = bucket + '/' + streamid + '/' + imageid
     #TODO
     try:
       create_file(filename,imagefile,contenttype)
       self.response.write('\n\n')
+      #Once image successfully created, add Image to the image list in stream
+      thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':filename}
+      logging.info('Image object created: ' + str(thisimage))
+      myimages.append(thisimage)
       #self.read_file(filename)
       #self.response.write('\n\n')
       #self.stat_file(filename)
