@@ -158,60 +158,60 @@ class GetStreamData(webapp2.RequestHandler):
 	#Creats the json object with the streamname, subscriber emails, and tags
 	#and call Create stream web service and send the json data
    def post(self):
-   	    streamname = cgi.escape(self.request.get('streamname'))
-   	    subscriberdata = cgi.escape(self.request.get('subscribers'))
-   	    subscriberlist = processSubscriberList(subscriberdata)
-   	    tagdata = cgi.escape(self.request.get('tags'))
-   	    taglist = processTagList(tagdata)
-   	    self.response.write('<html><body>Processed stream info: <pre>')
-   	    self.response.write('Stream name: ' + str(streamname))
-   	    self.response.write('<br>')
-   	    self.response.write('Subscriber list: <br>')
-   	    for subscriber in subscriberlist:
-   	    	self.response.write(subscriber)
-   	    	self.response.write('<br>')
-   	    self.response.write('Tags: ' + str(tagdata))
-   	    self.response.write('</pre></body></html>')
-   	    prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist}
-   	    mydata = json.dumps(prejson)
-   	    #This needs to be changes when uploaded
-   	    #url = 'http://localhost:8080/CreateStream'
-   	    url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
-   	    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-   	    logging.info("Create stream call result: " + str(result.content))
+        user  = str(users.get_current_user())
+        logging.info('Current user: ' + str(user))
+        streamname = cgi.escape(self.request.get('streamname'))
+        subscriberdata = cgi.escape(self.request.get('subscribers'))
+        subscriberlist = processSubscriberList(subscriberdata)
+        tagdata = cgi.escape(self.request.get('tags'))
+        taglist = processTagList(tagdata)
+        self.response.write('<html><body>Processed stream info: <pre>')
+        self.response.write('Stream name: ' + str(streamname))
+        self.response.write('<br>')
+        self.response.write('Subscriber list: <br>')
+        for subscriber in subscriberlist:
+          self.response.write(subscriber)
+          self.response.write('<br>')
+        self.response.write('Tags: ' + str(tagdata))
+        self.response.write('</pre></body></html>')
+        prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'currentuser':user}
+        mydata = json.dumps(prejson)
+        url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        logging.info("Create stream call result: " + str(result.content))
 
 
 class CreateStream(webapp2.RequestHandler):
   def post(self):
     try:
-      data = json.loads(self.request.body)
-      logging.info('Json data sent to this function: ' + str(data))
-      streamid = str(uuid.uuid1())
-      logging.info('\nStreamid: ' + streamid)
-      streamname = data['streamname']
-      logging.info('\nStreamname: ' + streamname)
-      streamsubscribers = data['subscribers']
-      logging.info('\nstreamsubcribers: ' + str(streamsubscribers))
-      taglist = data ['tags']
-      logging.info('\nTaglist: ' + str(taglist))
-      creationdate = datetime.now()
-      logging.info('\nCreation date: ' + str(creationdate))
-      owner = users.get_current_user()
-      logging.info('\nOwner: ' + str(owner))
-      viewdatelist = list()
-      logging.info('\nViewdatelist: ' + str(viewdatelist))
-      commentlist = list()
-      logging.info('\nCommentlist: ' + str(commentlist))
-      coverimage = 'coverimage'
-      logging.info('\nCoverimage: ' + str(coverimage))
-      imagelist = list()
-      logging.info('\nImagelist: ' + str(imagelist))
+        data = json.loads(self.request.body)
+        logging.info('Json data sent to this function: ' + str(data))
+        streamid = str(uuid.uuid1())
+        logging.info('\nStreamid: ' + streamid)
+        streamname = data['streamname']
+        logging.info('\nStreamname: ' + streamname)
+        streamsubscribers = data['subscribers']
+        logging.info('\nstreamsubcribers: ' + str(streamsubscribers))
+        taglist = data ['tags']
+        logging.info('\nTaglist: ' + str(taglist))
+        creationdate = datetime.now()
+        logging.info('\nCreation date: ' + str(creationdate))
+        owner = data['currentuser']
+        logging.info('\nOwner: ' + str(owner))
+        viewdatelist = list()
+        logging.info('\nViewdatelist: ' + str(viewdatelist))
+        commentlist = list()
+        logging.info('\nCommentlist: ' + str(commentlist))
+        coverimage = 'coverimage'
+        logging.info('\nCoverimage: ' + str(coverimage))
+        imagelist = list()
+        logging.info('\nImagelist: ' + str(imagelist))
       #create stream object
-      thisstream = {'streamid':streamid,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
+        thisstream = {'streamid':streamid,'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
       #store stream
-      mystreams.append(thisstream)
-      logging.info("My current stream list is: " + str(len(mystreams)))
-      payload = {'errorcode':0}
+        mystreams.append(thisstream)
+        logging.info("My current stream list is: " + str(len(mystreams)))
+        payload = {'errorcode':0}
     except:
       payload = {'errorcode':1}
     result = json.dumps(payload)
