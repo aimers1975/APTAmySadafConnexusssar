@@ -9,8 +9,7 @@ with open("amypic.jpg", "rb") as f:
     data = f.read()
     picdata = data.encode("base64")
 filenamekey = 'amypic.jpg'
-mystreamid = str(uuid.uuid1())
-mystructure = {'streamid':mystreamid, 'uploadimage':picdata, 'contenttype':'image/jpeg','filename':'amypic.jpg','comments':'This is my pic'}
+mystructure = {'streamname':'poop', 'uploadimage':picdata, 'contenttype':'image/jpeg','filename':'amypic.jpg','comments':'This is my pic'}
 myjson = json.dumps(mystructure)
 jsonfile = open("myimagejson.txt",'w')
 jsonfile.write(str(myjson))
