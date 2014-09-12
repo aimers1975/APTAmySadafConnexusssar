@@ -25,7 +25,8 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
-mystreams = {}
+appstreams = {}
+subscriptions = {}
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -47,7 +48,12 @@ MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 		<div>
 			<input name="streamname" class="element text medium" type="text" maxlength="255" value=""/> 
 		</div> 
-		</li>		<li id="li_1" >
+		</li>		     <li id="li_4" >
+    <label class="description" for="element_4">URL To Cover Image </label>
+    <div>
+      <input name="coverurl" class="element text medium" type="text" maxlength="255" value=""/> 
+    </div> <p class="guidelines" id="guide_4"><small>Optional, may be left blank.</small></p>
+    </li>   <li id="li_1" >
 		<label class="description" for="element_1">List of subscribers </label>
 		<div>
 			<textarea name="subscribers" class="element textarea medium"></textarea> 
@@ -64,6 +70,20 @@ MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 	</div>
 	</body>
 </html>"""
+
+def addUserlistToSubscriptions(userlist,streamname):
+  logging.info("In add users to subscriptions")
+  for user in userlist:
+    logging.info("Interating through this user: " + str(user))
+    if (subscriptions.has_key(user)):
+      logging.info("\nFound key\n")
+      subscriptions[user].append(streamname)
+    else:
+      logging.info("\nKey not found, trying to create list and append\n")
+      subscriptions[user] = list()
+      logging.info("\nNew list created, appending...\n")
+      subscriptions[user].append(streamname)
+  logging.info('Subscriber list updated: ' + str(subscriptions))
 
 def processSubscriberList(subdata):
 	#Gets valid emails from form data for subscribers
@@ -164,17 +184,20 @@ class GetStreamData(webapp2.RequestHandler):
         subscriberdata = cgi.escape(self.request.get('subscribers'))
         subscriberlist = processSubscriberList(subscriberdata)
         tagdata = cgi.escape(self.request.get('tags'))
-        taglist = processTagList(tagdata)
+        taglist = processTagList(tagdata) 
+        coverurl = cgi.escape(self.request.get('coverurl'))
         self.response.write('<html><body>Processed stream info: <pre>')
+        self.response.write('<br>')
         self.response.write('Stream name: ' + str(streamname))
         self.response.write('<br>')
         self.response.write('Subscriber list: <br>')
         for subscriber in subscriberlist:
           self.response.write(subscriber)
           self.response.write('<br>')
+        self.response.write('Cover url: ' + str(coverurl))
         self.response.write('Tags: ' + str(tagdata))
         self.response.write('</pre></body></html>')
-        prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'currentuser':user}
+        prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'coverurl':coverurl,'currentuser':user}
         mydata = json.dumps(prejson)
         url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
@@ -189,6 +212,7 @@ class CreateStream(webapp2.RequestHandler):
         streamname = data['streamname']
         logging.info('\nStreamname: ' + streamname)
         streamsubscribers = data['subscribers']
+        addUserlistToSubscriptions(streamsubscribers,streamname)
         logging.info('\nstreamsubcribers: ' + str(streamsubscribers))
         taglist = data ['tags']
         logging.info('\nTaglist: ' + str(taglist))
@@ -200,24 +224,23 @@ class CreateStream(webapp2.RequestHandler):
         logging.info('\nViewdatelist: ' + str(viewdatelist))
         commentlist = list()
         logging.info('\nCommentlist: ' + str(commentlist))
-        coverimage = 'coverimage'
-        logging.info('\nCoverimage: ' + str(coverimage))
+        coverurl = data['coverurl']
+        logging.info('\nCoverurl: ' + str(coverurl))
         imagelist = list()
         logging.info('\nImagelist: ' + str(imagelist))
-      #create stream object
-        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
-        if (not mystreams.has_key(owner)):
-          mystreams[owner] = {streamname:thisstream}
+        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'coverurl':coverurl,'imagelist':imagelist}
+        if (not appstreams.has_key(owner)):
+          appstreams[owner] = {streamname:thisstream}
         else:
-          mystreams[owner][streamname] = thisstream
-        logging.info('My current stream list is: ' + str(len(mystreams)))
-        logging.info('My keys: ' + str(mystreams.keys()))
-        logging.info('This user now has: ' + str(mystreams[owner]) + ' streams')
+          appstreams[owner][streamname] = thisstream
+        logging.info('My current stream list is: ' + str(len(appstreams)))
+        logging.info('My keys: ' + str(appstreams.keys()))
+        logging.info('This user now has: ' + str(appstreams[owner]) + ' streams')
         payload = {'errorcode':0}
     except:
       payload = {'errorcode':1}
-    result = json.dumps(payload)
-    self.response.write(result)
+      result = json.dumps(payload)
+      self.response.write(result)
 
 class ChooseImage(webapp2.RequestHandler):
   def get(self):
@@ -230,15 +253,27 @@ class ChooseImage(webapp2.RequestHandler):
     self.response.out.write('Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>')
 
 class ManageStream(webapp2.RequestHandler):
-	def post(self):
-	   data = json.loads(self.request.body)
-   	   logging.info('this is what Im looking for: ' + str(data))
-   	   #get inputs
-   	   #find streams by user id and retrieve them
-   	   #create json object for two streams and return them
-   	   payload = {'errorcode':1}
-   	   result = json.dumps(payload)
-   	   self.response.write(result)
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('Json data from call: ' + str(data))
+    userid = data['userid']
+    logging.info('Userid: ' + str(userid))
+    logging.info('Appstreams: ' + str(appstreams))
+    if(subscriptions.has_key(userid)):
+      logging.info('This user has subscriptions' + str(userid))
+      thisusersubscriptions = subscriptions[userid]
+    else:
+      logging.info(str(userid) + ' not found, returning empty subscription lists')
+      thisusersubscriptions = list()
+    if(appstreams.has_key(userid)):
+      logging.info('This user has streams: ' + str(userid))
+      thisuserstreams = appstreams[userid]
+    else:
+      logging.info(str(userid) + ' not found, return empty streamlist')
+      thisuserstreams = list()
+    payload = {'streamlist':thisuserstreams,'subscriptionlist':thisusersubscriptions}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class ViewStream(webapp2.RequestHandler):
 	def post(self):
@@ -306,11 +341,10 @@ class UploadImage(webapp2.RequestHandler):
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
-        #decode the image
+    #decode the image
     imagefile = encodedimage.decode('base64')
-    #create an ID for the image
+    #create an ID for the image - may not need this....
     imageid = str(uuid.uuid1())
-    #does stream exist? if not exit
     bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
     self.response.headers['Content-Type'] = 'text/plain'
     self.response.write('Testing uploade image, about to write ' + imagefilename + ' imagefile to datastore\n ')
@@ -326,11 +360,11 @@ class UploadImage(webapp2.RequestHandler):
       thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':filename}
       logging.info('Image object created: ' + str(thisimage))
       logging.info("starting stream search loop")
-      logging.info("My streams: " + str(mystreams))
-      for streamlist in mystreams.itervalues():
+      logging.info("My streams: " + str(appstreams))
+      for streamlist in appstreams.itervalues():
         if streamlist.has_key(streamname):
           streamlist[streamname]['imagelist'].append(thisimage)
-      logging.info("Mystreams: " + str(mystreams))
+      logging.info("Appstreams: " + str(appstreams))
       #self.read_file(filename)
       #self.response.write('\n\n')
       #self.stat_file(filename)
