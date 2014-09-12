@@ -24,7 +24,7 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
-mystreams = list()
+mystreams = {}
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -202,8 +202,6 @@ class CreateStream(webapp2.RequestHandler):
     try:
         data = json.loads(self.request.body)
         logging.info('Json data sent to this function: ' + str(data))
-        streamid = str(uuid.uuid1())
-        logging.info('\nStreamid: ' + streamid)
         streamname = data['streamname']
         logging.info('\nStreamname: ' + streamname)
         streamsubscribers = data['subscribers']
@@ -223,10 +221,14 @@ class CreateStream(webapp2.RequestHandler):
         imagelist = list()
         logging.info('\nImagelist: ' + str(imagelist))
       #create stream object
-        thisstream = {'streamid':streamid,'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
-      #store stream
-        mystreams.append(thisstream)
-        logging.info("My current stream list is: " + str(len(mystreams)))
+        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'commentlist':commentlist,'coverimage':coverimage,'imagelist':imagelist}
+        if (not mystreams.has_key(owner)):
+          mystreams[owner] = {streamname:thisstream}
+        else:
+          mystreams[owner][streamname] = thisstream
+        logging.info('My current stream list is: ' + str(len(mystreams)))
+        logging.info('My keys: ' + str(mystreams.keys()))
+        logging.info('This user now has: ' + str(mystreams[owner]) + ' streams')
         payload = {'errorcode':0}
     except:
       payload = {'errorcode':1}
@@ -316,7 +318,7 @@ class UploadImage(webapp2.RequestHandler):
     except:
       logging.info('No json data with this request')
     encodedimage = data['uploadimage']
-    streamid = data['streamid']
+    streamname = data['streamname']
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
@@ -328,18 +330,23 @@ class UploadImage(webapp2.RequestHandler):
     bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
     self.response.headers['Content-Type'] = 'text/plain'
     self.response.write('Testing uploade image, about to write ' + imagefilename + ' imagefile to datastore\n ')
-    self.response.write('Using bucket name: ' + bucket_name + 'Writing file for streamid: ' + streamid + '\n\n')
+    self.response.write('Using bucket name: ' + bucket_name + 'Writing file for streamid: ' + streamname + '\n\n')
     #create location string for image   
     bucket = '/' + bucket_name
-    filename = bucket + '/' + streamid + '/' + imageid
-    #TODO
+    filename = bucket + '/' + streamname + '/' + imageid
     try:
       create_file(filename,imagefile,contenttype)
+      logging.info('Created imagefile')
       self.response.write('\n\n')
       #Once image successfully created, add Image to the image list in stream
       thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':filename}
       logging.info('Image object created: ' + str(thisimage))
-      myimages.append(thisimage)
+      logging.info("starting stream search loop")
+      logging.info("My streams: " + str(mystreams))
+      for streamlist in mystreams.itervalues():
+        if streamlist.has_key(streamname):
+          streamlist[streamname]['imagelist'].append(thisimage)
+      logging.info("Mystreams: " + str(mystreams))
       #self.read_file(filename)
       #self.response.write('\n\n')
       #self.stat_file(filename)
