@@ -25,8 +25,14 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
+#this is the list of streams, keys are the userid that owns the stream
 appstreams = {}
+#this is the list of subscriptions for quick search, key is userid, value is the list of streams they are subscribed to
 subscriptions = {}
+#this is the list of cover images, key us streamname, value is coverimage url.
+coverimagesbystream = {}
+#this is the list of streams, to quickly search for user that owns
+streamstoowner = {}
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -71,6 +77,10 @@ MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 	</body>
 </html>"""
 
+def addcoverurl(coverurl,streamname):
+  logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
+  coverurl[streamname] = coverurl
+    
 def addUserlistToSubscriptions(userlist,streamname):
   logging.info("In add users to subscriptions")
   for user in userlist:
@@ -207,25 +217,36 @@ class GetStreamData(webapp2.RequestHandler):
 class CreateStream(webapp2.RequestHandler):
   def post(self):
     try:
-        data = json.loads(self.request.body)
-        logging.info('Json data sent to this function: ' + str(data))
-        streamname = data['streamname']
-        logging.info('\nStreamname: ' + streamname)
+      data = json.loads(self.request.body)
+      logging.info('Json data sent to this function: ' + str(data))
+
+      streamname = data['streamname']
+      logging.info('\nStreamname: ' + streamname)
+
+      if(not streamstoowner.has_key(streamname)):
         streamsubscribers = data['subscribers']
         addUserlistToSubscriptions(streamsubscribers,streamname)
         logging.info('\nstreamsubcribers: ' + str(streamsubscribers))
+
         taglist = data ['tags']
         logging.info('\nTaglist: ' + str(taglist))
-        creationdate = datetime.now()
+
+        creationdate = str(datetime.now())
         logging.info('\nCreation date: ' + str(creationdate))
+
         owner = data['currentuser']
         logging.info('\nOwner: ' + str(owner))
+        streamstoowner[streamname] = owner
+
         viewdatelist = list()
         logging.info('\nViewdatelist: ' + str(viewdatelist))
+
         commentlist = list()
         logging.info('\nCommentlist: ' + str(commentlist))
+
         coverurl = data['coverurl']
         logging.info('\nCoverurl: ' + str(coverurl))
+
         imagelist = list()
         logging.info('\nImagelist: ' + str(imagelist))
         thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'coverurl':coverurl,'imagelist':imagelist}
@@ -237,6 +258,9 @@ class CreateStream(webapp2.RequestHandler):
         logging.info('My keys: ' + str(appstreams.keys()))
         logging.info('This user now has: ' + str(appstreams[owner]) + ' streams')
         payload = {'errorcode':0}
+      else:
+        logging.info('That streamname already exists')
+        payload = {'errorcode':1}
     except:
       payload = {'errorcode':1}
       result = json.dumps(payload)
@@ -388,12 +412,21 @@ class UploadImage(webapp2.RequestHandler):
 
 #self.response.write(result)
 class ViewAllStreams(webapp2.RequestHandler):
-	def post(self):
-		data = json.loads(self.request.body)
-		logging.info('this is what Im looking for: ' + str(data))
-		payload = {'errorcode':1}
-		result = json.dumps(payload)
-		self.response.write(result)
+  def post(self):
+    logging.info('View all streams has no json input.')
+    totalstreams = list()
+    coverurls = list()
+    for streamlist in appstreams.itervalues():
+      logging.info('streamlist from appstreams: ' + str(streamlist) + ' The type is: ' + str(type(streamlist)))
+      totalstreams.append(streamlist)
+      for stream in streamlist.itervalues():
+        logging.info("This stream is: " + str(stream))
+        coverurls.append(stream['coverurl'])
+    logging.info("Total streams: " + str(totalstreams))
+    logging.info("Coverurls: " + str(coverurls))
+    payload = {'streamlist':totalstreams,'coverurls':coverurls}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
 	def post(self):
