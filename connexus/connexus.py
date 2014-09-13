@@ -122,7 +122,7 @@ def processTagList(tagdata):
 def create_file(filename, file, contenttype):
   logging.info('Creating file %s\n' % filename)
   write_retry_params = gcs.RetryParams(backoff_factor=1.1)
-  gcs_file = gcs.open(filename,'w',content_type=contenttype,options={'x-goog-meta-foo': 'foo','x-goog-meta-bar': 'bar'},retry_params=write_retry_params)
+  gcs_file = gcs.open(filename,'w',content_type=contenttype,options={'x-goog-acl': 'public-read'},retry_params=write_retry_params)
   gcs_file.write(file)
   gcs_file.close()
   #TODO: don't think we'll keep these temp files...once everything is working.
@@ -436,7 +436,8 @@ class UploadImage(webapp2.RequestHandler):
       logging.info('Created imagefile')
       self.response.write('\n\n')
       #Once image successfully created, add Image to the image list in stream
-      thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':filename}
+      imagefileurl = "http://storage.googleapis.com" + str(filename)
+      thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':imagefileurl}
       logging.info('Image object created: ' + str(thisimage))
       logging.info("starting stream search loop")
       logging.info("My streams: " + str(appstreams))
@@ -511,7 +512,7 @@ class Report(webapp2.RequestHandler):
 
 class DeleteAllImages(webapp2.RequestHandler):
   def post(self):
-    data = json.loads(self.request.body)
+    #data = json.loads(self.request.body)
     logging.info('No json data for this call')
     delete_files()
     payload = {'errorcode':0}
