@@ -341,9 +341,23 @@ class ViewStream(webapp2.RequestHandler):
           allstreamsforsort[thisindex] = temp
         else: #we're no longer moving up the list
           break
-      payload = {'viewstream': thisstream, 'pages':list()}
+      images = thisstream['imagelist']
+      logging.info('Images list: ' + str(images))
+      start = int(pagerange[0])
+      logging.info('Pagerange start: ' + str(start))
+      end = int(pagerange[1])
+      logging.info('Pagerange end: ' + str(end))
+      logging.info('Length of images is: ' + str(len(images)))
+      if ((start > -1) and ((end+1) <= len(images))):
+        images = images[start:end+1]
+        urls = list()
+        for image in images:
+          urls.append(image['imageurl'])
+        payload = {'picurls': urls, 'pagerange':pagerange}
+      else:
+        payload = {'picurls':list(), 'pagerange':list()}
     except:
-      payload = {'viewstream':'','pages':list()}
+      payload = {'picurls':'','pagerange':list()}
     logging.info('Payload output is: ' + str(payload))
     result = json.dumps(payload)
     self.response.write(result)
