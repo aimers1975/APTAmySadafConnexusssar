@@ -265,8 +265,8 @@ class CreateStream(webapp2.RequestHandler):
         payload = {'errorcode':1}
     except:
       payload = {'errorcode':1}
-      result = json.dumps(payload)
-      self.response.write(result)
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class ChooseImage(webapp2.RequestHandler):
   def get(self):
@@ -297,7 +297,21 @@ class ManageStream(webapp2.RequestHandler):
     else:
       logging.info(str(userid) + ' not found, return empty streamlist')
       thisuserstreams = list()
-    payload = {'streamlist':thisuserstreams,'subscriptionlist':thisusersubscriptions}
+    thisusersubscriptionlist = list()
+    logging.info('allstreamsforsort is now: ' + str(allstreamsforsort))
+    logging.info('subscriptions are: ' + str(thisusersubscriptions))
+    try:
+      for name in thisusersubscriptions:
+        logging.info("Looking for: " + name)
+        logging.info("Streams to owner: " + str(streamstoowner[name]))
+        currentstream = appstreams[streamstoowner[name]][name]
+        logging.info('Current stream list? ' + str(currentstream))
+        thisusersubscriptionlist.append(currentstream)
+        #logging('Stream found: ' + str(name) + ' appending ' + str(currentstream))
+        #thisusersubscriptionlist.append(currentstream)
+    except:
+      logging.info('Error occured mapping subscription stream names in allstreamsforsort')
+    payload = {'streamlist':thisuserstreams,'subscriptionlist':thisusersubscriptionlist}
     result = json.dumps(payload)
     self.response.write(result)
 
