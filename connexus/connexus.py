@@ -462,8 +462,8 @@ class UploadImage(webapp2.RequestHandler):
                           'Please check the logs for more details.\n')
 
     else:
-      delete_files()
-      self.response.write('\n\nThe file was successfully uploaded and then deleted!\n')
+      #delete_files()
+      self.response.write('\n\nThe file was successfully uploaded!\n')
 
 #self.response.write(result)
 class ViewAllStreams(webapp2.RequestHandler):
@@ -509,6 +509,15 @@ class Report(webapp2.RequestHandler):
 		result = json.dumps(payload)
 		self.response.write(result)
 
+class DeleteAllImages(webapp2.RequestHandler):
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('No json data for this call')
+    delete_files()
+    payload = {'errorcode':0}
+    result = json.dumps(payload)
+    self.response.write(result)
+
 from google.appengine.api import mail
 jinja_environment = jinja2.Environment(autoescape=True,loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
 
@@ -547,5 +556,6 @@ application = webapp2.WSGIApplication([
     ('/gcswrite', GCSHandler),
     ('/gcs/serve', GCSServingHandler),
     ('/Report', Report),
+    ('/DeleteAllImages', DeleteAllImages),
     ('/email', email)
 ], debug=True)
