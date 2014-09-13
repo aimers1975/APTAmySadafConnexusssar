@@ -25,9 +25,10 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
-#this is the list of streams, keys are the userid that owns the stream
+#this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
 appstreams = {}
 #this is the list of subscriptions for quick search, key is userid, value is the list of streams they are subscribed to
+allstreamsforsort = list()
 subscriptions = {}
 #this is the list of cover images, key us streamname, value is coverimage url.
 coverimagesbystream = {}
@@ -252,11 +253,12 @@ class CreateStream(webapp2.RequestHandler):
         thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'coverurl':coverurl,'imagelist':imagelist}
         if (not appstreams.has_key(owner)):
           appstreams[owner] = {streamname:thisstream}
+          allstreamsforsort.append(thisstream)
         else:
           appstreams[owner][streamname] = thisstream
+          allstreamsforsort.append(thisstream)
         logging.info('My current stream list is: ' + str(len(appstreams)))
-        logging.info('My keys: ' + str(appstreams.keys()))
-        logging.info('This user now has: ' + str(appstreams[owner]) + ' streams')
+        logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort)) 
         payload = {'errorcode':0}
       else:
         logging.info('That streamname already exists')
@@ -300,12 +302,43 @@ class ManageStream(webapp2.RequestHandler):
     self.response.write(result)
 
 class ViewStream(webapp2.RequestHandler):
-	def post(self):
-		data = json.loads(self.request.body)
-		logging.info('this is what Im looking for: ' + str(data))
-		payload = {'errorcode':1}
-		result = json.dumps(payload)
-		self.response.write(result)
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('Input jsonis: ' + str(data))
+    streamname = data['streamname']
+    pagerange = data['pagerange']
+    #Todonot sure how to use the page range yet????
+    try:
+      logging.info('streamstoowner[streamname]: ' + str(streamstoowner[streamname]) )
+      currentstream = appstreams[streamstoowner[streamname]][streamname]
+      logging.info('The stream retrieved for viewing is: ' + str(currentstream))
+      index = allstreamsforsort.index(currentstream)
+      logging.info('The index found is: ' + str(index))
+      logging.info('Stream: ' + str(streamname) + ' found at index: ' + str(index))
+      thisstream = allstreamsforsort[index]
+      logging.info("Streamdata found: " + str(thisstream))
+      allstreamsforsort[index]['viewdatelist'].append(str(datetime.now()))
+      logging.info("Added view date")
+      for thisindex in xrange(index,0,-1):
+        logging.info('Started for loop. Thisindex is: ' + str(thisindex))
+        newcount = len(allstreamsforsort[thisindex]['viewdatelist'])
+        logging.info('Newcount: ' + str(newcount))
+        logging.info('Allstreamsforsort: ' + str(allstreamsforsort))
+        nextcount = len(allstreamsforsort[thisindex-1]['viewdatelist'])
+        logging.info('Loop index is now: ' + str(thisindex))
+        logging.info('Newcount: ' + str(newcount) + ' next count: ' + str(nextcount))
+        if newcount > nextcount: #swap 
+          temp = allstreamsforsort[thisindex-1]
+          allstreamsforsort[thisindex-1] = allstreamsforsort[thisindex]
+          allstreamsforsort[thisindex] = temp
+        else: #we're no longer moving up the list
+          break
+      payload = {'viewstream': thisstream, 'pages':list()}
+    except:
+      payload = {'viewstream':'','pages':list()}
+    logging.info('Payload output is: ' + str(payload))
+    result = json.dumps(payload)
+    self.response.write(result)
 
 
 class UploadImage(webapp2.RequestHandler):
@@ -422,6 +455,8 @@ class ViewAllStreams(webapp2.RequestHandler):
       for stream in streamlist.itervalues():
         logging.info("This stream is: " + str(stream))
         coverurls.append(stream['coverurl'])
+    for stream in allstreamsforsort:
+      stream['viewdatelist'].append(str(datetime.now()))
     logging.info("Total streams: " + str(totalstreams))
     logging.info("Coverurls: " + str(coverurls))
     payload = {'streamlist':totalstreams,'coverurls':coverurls}
@@ -437,12 +472,12 @@ class SearchStreams(webapp2.RequestHandler):
 		self.response.write(result)
 
 class GetMostViewedStreams(webapp2.RequestHandler):
-	def post(self):
-		data = json.loads(self.request.body)
-		logging.info('this is what Im looking for: ' + str(data))
-		payload = {'errorcode':1}
-		result = json.dumps(payload)
-		self.response.write(result)
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('No json data for this call')
+    payload = {'mostviewedstreams':allstreamsforsort}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class Report(webapp2.RequestHandler):
 	def post(self):
