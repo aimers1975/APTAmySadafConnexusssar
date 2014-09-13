@@ -286,7 +286,7 @@ class ManageStream(webapp2.RequestHandler):
     logging.info('Userid: ' + str(userid))
     logging.info('Appstreams: ' + str(appstreams))
     if(subscriptions.has_key(userid)):
-      logging.info('This user has subscriptions' + str(userid))
+      logging.info('This user has subscriptions: ' + str(userid))
       thisusersubscriptions = subscriptions[userid]
     else:
       logging.info(str(userid) + ' not found, returning empty subscription lists')
@@ -300,18 +300,12 @@ class ManageStream(webapp2.RequestHandler):
     thisusersubscriptionlist = list()
     logging.info('allstreamsforsort is now: ' + str(allstreamsforsort))
     logging.info('subscriptions are: ' + str(thisusersubscriptions))
-    try:
-      for name in thisusersubscriptions:
-        logging.info("Looking for: " + name)
-        logging.info("Streams to owner: " + str(streamstoowner[name]))
-        currentstream = appstreams[streamstoowner[name]][name]
-        logging.info('Current stream list? ' + str(currentstream))
-        thisusersubscriptionlist.append(currentstream)
-        #logging('Stream found: ' + str(name) + ' appending ' + str(currentstream))
-        #thisusersubscriptionlist.append(currentstream)
-    except:
-      logging.info('Error occured mapping subscription stream names in allstreamsforsort')
-    payload = {'streamlist':thisuserstreams,'subscriptionlist':thisusersubscriptionlist}
+    for name in thisusersubscriptions:
+      logging.info("Looking for stream: " + name)
+      currentstream = appstreams[streamstoowner[name]][name]
+      logging.info('Current stream appending to subscribed list: ' + str(currentstream))
+      thisusersubscriptionlist.append(currentstream)
+    payload = {'streamlist':thisuserstreams,'subscribedstreamlist':thisusersubscriptionlist}
     result = json.dumps(payload)
     self.response.write(result)
 
