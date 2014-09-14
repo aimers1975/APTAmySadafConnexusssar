@@ -14,7 +14,6 @@ import json
 import cgi
 import urllib
 import re
-import jinja2
 import os
 import uuid
 
@@ -77,6 +76,23 @@ MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//
 	</div>
 	</body>
 </html>"""
+
+EMAIL_HTML = """\
+<html>
+   <body>
+      <form action="/emailHandler" method="post">
+         <input name="toEmail" placeholder="To: ">
+         <br/>
+         <input name="subject" placeholder="Subject: ">
+         <br/>
+         <textarea name="message" style="height:200px; weight=500px;" placeholder="Enter your message: ">
+         </textarea>
+         <br/>
+         <input type="submit" value="Send"/> 
+      </form>
+   </body>
+</html>
+"""
 
 def addcoverurl(coverurl,streamname):
   logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
@@ -520,26 +536,24 @@ class DeleteAllImages(webapp2.RequestHandler):
     self.response.write(result)
 
 from google.appengine.api import mail
-jinja_environment = jinja2.Environment(autoescape=True,loader=jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')))
-
 class email(webapp2.RequestHandler):
-  template = jinja_environment.get_template('email.html')
   def get(self):
-    self.response.out.write(self.template.render())
+    self.response.write(EMAIL_HTML)
+
+class EmailHandler(webapp2.RequestHandler):
   def post(self):
-  # get email info
-    emailAddress=self.request.get("toEmail")
-    emailSubject=self.request.get("subject")
-    emailMessage=self.request.get("message")
-    message=mail.EmailMessage(sender="sh.sadaf@gmail.com",subject=emailSubject)
+    emailAddress=self.request.get('toEmail')
+    subject = self.request.get('subject')
+    content = self.request.get('message')
+    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject=subject)
 
     if not mail.is_email_valid(emailAddress):
       self.response.out.write("Email address is not valid.")
 
     message.to = emailAddress
-    message.body="""%s""" %(emailMessage)
+    message.body = """%s""" %(content)
     message.send()
-    self.response.out.write("Message sent successfully!")
+    self.response.out.write("Email sent successfully!")    
 
 application = webapp2.WSGIApplication([
     ('/', MainPage),
@@ -558,5 +572,6 @@ application = webapp2.WSGIApplication([
     ('/gcs/serve', GCSServingHandler),
     ('/Report', Report),
     ('/DeleteAllImages', DeleteAllImages),
-    ('/email', email)
+    ('/email', email),
+    ('/emailHandler', EmailHandler)
 ], debug=True)
