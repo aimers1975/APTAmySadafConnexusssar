@@ -94,6 +94,19 @@ EMAIL_HTML = """\
 </html>
 """
 
+TRENDING_STREAMS_HTML = """\
+<html>
+  <body>
+    <H2>Top 3 Trending Streams</H2>
+    <form action="/cron" method="post">
+      <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
+      <input type="checkbox" name="cronRate" value="Ten"> Every 10 minutes
+      <input type="submit" value="Update Rate">
+    </form>
+  </body>
+</html>
+"""
+
 def addcoverurl(coverurl,streamname):
   logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
   coverurl[streamname] = coverurl
@@ -555,6 +568,48 @@ class EmailHandler(webapp2.RequestHandler):
     message.send()
     self.response.out.write("Email sent successfully!")    
 
+from google.appengine.ext import webapp
+from google.appengine.ext.webapp.util import run_wsgi_app
+
+class TrendingStreams(webapp.RequestHandler):
+  def get(self):
+    self.response.write(TRENDING_STREAMS_HTML)
+
+class TrendingStreamsHandler(webapp.RequestHandler):
+  def post(self):
+    checkboxValue = self.request.get('cronRate')
+    self.response.write('<html><body>Cron Rate is: <pre>')
+    self.response.write(cgi.escape(self.request.get('cronRate')))
+    self.response.write('</pre></body></html>')
+
+    logging.info('Cron rate selected: ' + str(checkboxValue))
+
+    five = 'Five'
+    if checkboxValue == 'Five':
+      self.response.write('<html><body>Cron Rate is Five')
+      self.response.write('</body></html>')
+      cronjob = '/cron/fivemins'
+      self.redirect(cronjob)
+    else:
+      self.response.write('<html><body>Cron Rate is Ten')
+      self.response.write('</body></html>')
+      cronjob = '/cron/tenmins'
+      self.redirect(cronjob)
+
+class CronJobHandler(webapp.RequestHandler):
+  def get(self):
+    self.response.write('<html><body>Cron job successful.. </body></html>')
+    emailAddress = "sadaf.syed@utexas.edu"
+
+    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Test Email")
+
+    if not mail.is_email_valid(emailAddress):
+      self.response.out.write("Email address is not valid.")
+
+    message.to = emailAddress
+    message.send()
+    self.response.out.write("Message sent successfully!")
+
 application = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/GetStreamData', GetStreamData),
@@ -573,5 +628,9 @@ application = webapp2.WSGIApplication([
     ('/Report', Report),
     ('/DeleteAllImages', DeleteAllImages),
     ('/email', email),
-    ('/emailHandler', EmailHandler)
+    ('/emailHandler', EmailHandler),
+    ('/trends', TrendingStreams),
+    ('/cronSettings', TrendingStreamsHandler),
+    ('/cron/fivemins', CronJobHandler),
+    ('/cron/tenmins', CronJobHandler)
 ], debug=True)
