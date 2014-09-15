@@ -98,7 +98,7 @@ TRENDING_STREAMS_HTML = """\
 <html>
   <body>
     <H2>Top 3 Trending Streams</H2>
-    <form action="/cron" method="post">
+    <form action="/cron/fivemins" method="post">
       <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
       <input type="checkbox" name="cronRate" value="Ten"> Every 10 minutes
       <input type="submit" value="Update Rate">
@@ -221,9 +221,12 @@ class GetStreamData(webapp2.RequestHandler):
         user  = str(users.get_current_user())
         logging.info('Current user: ' + str(user))
         streamname = cgi.escape(self.request.get('streamname'))
+        logging.info('Stream Name: ' + str(streamname))
         subscriberdata = cgi.escape(self.request.get('subscribers'))
+        logging.info('Subscriber Data: ' + str(subscriberdata))
         subscriberlist = processSubscriberList(subscriberdata)
         tagdata = cgi.escape(self.request.get('tags'))
+        logging.info('Tag Data: ' + str(tagdata))
         taglist = processTagList(tagdata) 
         coverurl = cgi.escape(self.request.get('coverurl'))
         self.response.write('<html><body>Processed stream info: <pre>')
@@ -239,6 +242,7 @@ class GetStreamData(webapp2.RequestHandler):
         self.response.write('</pre></body></html>')
         prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'coverurl':coverurl,'currentuser':user}
         mydata = json.dumps(prejson)
+        logging.info('JSON data: ', str(mydata))
         url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
         logging.info("Create stream call result: " + str(result.content))
@@ -597,7 +601,7 @@ class TrendingStreamsHandler(webapp.RequestHandler):
       self.redirect(cronjob)
 
 class CronJobHandler(webapp.RequestHandler):
-  def get(self):
+  def sendTrendEmail(self):
     self.response.write('<html><body>Cron job successful.. </body></html>')
     emailAddress = "sadaf.syed@utexas.edu"
 
@@ -609,6 +613,16 @@ class CronJobHandler(webapp.RequestHandler):
     message.to = emailAddress
     message.send()
     self.response.out.write("Message sent successfully!")
+  
+  def post(self):
+    checkboxValue = self.request.get('cronRate')
+    
+    if checkboxValue == "Five":
+      self.sendTrendEmail()
+    elif checkboxValue == "Ten":
+      self.sendTrendEmail()
+    elif checkboxValue == "NoReport":
+      self.response.write('<html><body>Trending Reports disabled.</body></html>')
 
 application = webapp2.WSGIApplication([
     ('/', MainPage),
@@ -632,5 +646,6 @@ application = webapp2.WSGIApplication([
     ('/trends', TrendingStreams),
     ('/cronSettings', TrendingStreamsHandler),
     ('/cron/fivemins', CronJobHandler),
-    ('/cron/tenmins', CronJobHandler)
+    ('/cron/tenmins', CronJobHandler),
+    ('/corn/([^/]+)/', CronJobHandler)
 ], debug=True)
