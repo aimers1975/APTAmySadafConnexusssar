@@ -5,7 +5,7 @@ from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
-from datetime import datetime
+from datetime import datetime,timedelta
 from time import gmtime, strftime
 import cloudstorage as gcs
 import webapp2
@@ -26,12 +26,12 @@ tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
 appstreams = {}
-#this is the list of subscriptions for quick search, key is userid, value is the list of streams they are subscribed to
 allstreamsforsort = list()
+#this is the list of subscriptions for quick search, key is userid, value is the list of streams they are subscribed to
 subscriptions = {}
 #this is the list of cover images, key us streamname, value is coverimage url.
 coverimagesbystream = {}
-#this is the list of streams, to quickly search for user that owns
+#this is the dict of streamnames mapped to owners, to quickly search for user that owns
 streamstoowner = {}
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
@@ -107,6 +107,14 @@ TRENDING_STREAMS_HTML = """\
 </html>
 """
 
+def olderthanhour(checktimestring):
+  hourago = datetime.now() - timedelta(hours=1)
+  if(checktimestring < hourago.isoformat()):
+    return true
+  else:
+    return false
+
+
 def addcoverurl(coverurl,streamname):
   logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
   coverurl[streamname] = coverurl
@@ -155,17 +163,29 @@ def create_file(filename, file, contenttype):
   gcs_file.write(file)
   gcs_file.close()
   #TODO: don't think we'll keep these temp files...once everything is working.
+  #for now used by delete_files to clean up the datastore before reloading the app
   tmp_filenames_to_clean_up.append(filename)
 
 #temporary helper to cleanup test files written
 def delete_files():
-    logging.info('Deleting files...\n')
+    logging.info('Deleting files...\n' + str(tmp_filenames_to_clean_up))
     for filename in tmp_filenames_to_clean_up:
       logging.info('Deleting file %s\n' % filename)
       try:
         gcs.delete(filename)
       except gcs.NotFoundError:
         pass
+
+
+def delete_images(imagefiles):
+  logging.info('Deleting image: ' + str(imagefiles))
+  for filename in imagefiles:
+    logging.info('Deleting image: ' + str(filename))
+    try:
+      gcs.delete(filename)
+    except gcs.NotFoundError:
+      pass
+
 
 class MainPage(webapp2.RequestHandler):
   def get(self):
@@ -176,6 +196,7 @@ class MainPage(webapp2.RequestHandler):
     else:
       self.redirect(users.create_login_url(self.request.uri))
 
+#Sample function, we may not use
 class GCSHandler(webapp2.RequestHandler):
   def get(self):
     logging.info("Got to GCS Handler.")
@@ -188,12 +209,13 @@ class GCSHandler(webapp2.RequestHandler):
     # Delete files.
     blobstore.delete(blob_key)
 
-
+#Sample code - not currently used, will see if needed.
 class GCSServingHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self):
     blob_key = CreateFile('/' + AP_ID_GLOBAL + '/blobstore_serving_demo')
     self.send_blob(blob_key)
 
+#Sample code we may not use
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
     upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
@@ -204,6 +226,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
     logging.info('Redirecting, Redirect url is: ' + redirectstring) 
     self.redirect(redirectstring)
 
+#sample code we may not
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
   def get(self, resource):
     logging.info("Got to serveHandler.")
@@ -297,6 +320,7 @@ class CreateStream(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+#We are probably not going to use this service, just started testing blobstore with it..
 class ChooseImage(webapp2.RequestHandler):
   def get(self):
     upload_url = blobstore.create_upload_url('/upload')
@@ -307,6 +331,7 @@ class ChooseImage(webapp2.RequestHandler):
     self.response.out.write(urlhtml)
     self.response.out.write('Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>')
 
+#takes a user as json input, and returns the list of streams the user owns and is subscribed to
 class ManageStream(webapp2.RequestHandler):
   def post(self):
     data = json.loads(self.request.body)
@@ -344,7 +369,6 @@ class ViewStream(webapp2.RequestHandler):
     logging.info('Input jsonis: ' + str(data))
     streamname = data['streamname']
     pagerange = data['pagerange']
-    #Todonot sure how to use the page range yet????
     try:
       logging.info('streamstoowner[streamname]: ' + str(streamstoowner[streamname]) )
       currentstream = appstreams[streamstoowner[streamname]][streamname]
@@ -354,6 +378,9 @@ class ViewStream(webapp2.RequestHandler):
       logging.info('Stream: ' + str(streamname) + ' found at index: ' + str(index))
       thisstream = allstreamsforsort[index]
       logging.info("Streamdata found: " + str(thisstream))
+      for x in range(0,len(allstreamsforsort[index]['viewdatelist'])):
+        if(olderthanhour(allstreamsforsort[index]['viewdatelist'][x])):
+          allstreamsforsort[index]['viewdatelist'].remove(allstreamsforsort[index]['viewdatelist'][x])
       allstreamsforsort[index]['viewdatelist'].append(str(datetime.now()))
       logging.info("Added view date")
       for thisindex in xrange(index,0,-1):
@@ -523,6 +550,63 @@ class SearchStreams(webapp2.RequestHandler):
 		result = json.dumps(payload)
 		self.response.write(result)
 
+class DeleteStreams(webapp2.RequestHandler):
+  def post(self):
+    try:
+      data = json.loads(self.request.body)
+      logging.info('Json data for this call: ' + str(data))
+      #will take a list of streams
+      deletestreams = data['streamnamestodelete']
+      #iterate through list of streams input
+      for stream in deletestreams:
+        logging.info("Deleting streamname: " + str(stream))
+        if streamstoowner.has_key(stream):
+          subscribed = appstreams[streamstoowner[stream]][stream]['subscriberlist']
+          logging.info('Subscribers are: ' + str(subscribed))
+          thisstream = appstreams[streamstoowner[stream]][stream]
+          imageobjects = thisstream['imagelist']
+          imagestodelete = list()
+          for imageurl in imageobjects:
+            logging.info("Image url object: " + str(imageurl))
+            thisurl = imageurl['imageurl']
+            logging.info('This url: ' + str(thisurl))
+            parturl = thisurl.split('http://storage.googleapis.com')[1]
+            logging.info('Parturl: ' + str(parturl))
+            imagestodelete.append(parturl)
+          logging.info('Deleting: ' + str(imagestodelete))
+          delete_images(imagestodelete)
+          logging.info('Delete stream: ' + str(thisstream))
+          for user in subscribed:
+            logging.info('Removing subscription for ' + str(user) + ' in stream ' + str(stream))
+            subscriptions[user].remove(stream)
+            if (len(subscriptions[user]) == 0):
+              subscriptions.pop(user)
+          appstreams[streamstoowner[stream]].pop(stream)
+          if (len(appstreams[streamstoowner[stream]]) == 0):
+            appstreams.pop(streamstoowner[stream])
+          allstreamsforsort.remove(thisstream)
+          streamstoowner.pop(stream)
+          logging.info("Appstreams is now: " + str(appstreams))
+          logging.info('subscriptions is now: ' + str(subscriptions))
+          logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort))
+          logging.info('streamstoowner is now: ' + str(streamstoowner))
+        else:
+          payload = {'errorcode':2}
+          logging.info('Key not found: ' + str(stream))
+      payload = {'errorcode':0}
+    except:
+      payload = {'errorcode':1}
+    result = json.dumps(payload)
+    self.response.write(result)
+
+class UnsubscribeStreams(webapp2.RequestHandler):
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('this is what Im looking for: ' + str(data))
+    payload = {'errorcode':1}
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
     data = json.loads(self.request.body)
@@ -625,6 +709,8 @@ application = webapp2.WSGIApplication([
     ('/GetMostViewedStreams', GetMostViewedStreams),
     ('/gcswrite', GCSHandler),
     ('/gcs/serve', GCSServingHandler),
+    ('/DeleteStreams', DeleteStreams),
+    ('/UnsubscribeStreams', UnsubscribeStreams),
     ('/Report', Report),
     ('/DeleteAllImages', DeleteAllImages),
     ('/email', email),
