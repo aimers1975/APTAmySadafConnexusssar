@@ -33,6 +33,7 @@ subscriptions = {}
 coverimagesbystream = {}
 #this is the dict of streamnames mapped to owners, to quickly search for user that owns
 streamstoowner = {}
+cronrate = 'five'
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -602,8 +603,17 @@ class DeleteStreams(webapp2.RequestHandler):
 class UnsubscribeStreams(webapp2.RequestHandler):
   def post(self):
     data = json.loads(self.request.body)
-    logging.info('this is what Im looking for: ' + str(data))
-    payload = {'errorcode':1}
+    logging.info('Json data for this call: ' + str(data))
+    user = data['unsubuser']
+    streamname = data['streamname']
+    appstreams[streamstoowner[streamname]][streamname]['subscriberlist'].remove(user)
+    subscriptions[user].remove(streamname)
+    if (len(subscriptions[user]) == 0):
+      subscriptions.pop(user)
+    logging.info('Appstreams is now: ' + str(appstreams))
+    logging.info('Subscriptions is now' + str(subscriptions))
+    logging.info('Allstreamsforsort is now ' + str(allstreamsforsort))
+    payload = {'errorcode':0}
     result = json.dumps(payload)
     self.response.write(result)
 
@@ -670,28 +680,35 @@ class TrendingStreamsHandler(webapp.RequestHandler):
 
     five = 'Five'
     if checkboxValue == 'Five':
+      logging.info("Found checkbox five.")
       self.response.write('<html><body>Cron Rate is Five')
       self.response.write('</body></html>')
       cronjob = '/cron/fivemins'
+      logging.info("Redirecing to cronjob fivemin.")
       self.redirect(cronjob)
     else:
+      logging.info("Found checkbox 10.")
       self.response.write('<html><body>Cron Rate is Ten')
       self.response.write('</body></html>')
       cronjob = '/cron/tenmins'
+      logging.info("Redirecing to cronjob fivemin.")
       self.redirect(cronjob)
 
 class CronJobHandler(webapp.RequestHandler):
   def get(self):
     self.response.write('<html><body>Cron job successful.. </body></html>')
-    emailAddress = "sadaf.syed@utexas.edu"
+    logging.info("In cronjob handler.")
+    emailAddress = "aimers1975@gmail.com"
 
-    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Test Email")
+    message = mail.EmailMessage(sender=emailAddress, subject="Test Email")
 
     if not mail.is_email_valid(emailAddress):
+      logging.info("The email is not valid.")
       self.response.out.write("Email address is not valid.")
 
     message.to = emailAddress
     message.send()
+    logging.info("Message sent")
     self.response.out.write("Message sent successfully!")
 
 application = webapp2.WSGIApplication([
