@@ -6,6 +6,7 @@ from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
 from datetime import datetime
+from datetime import timedelta
 from time import gmtime, strftime
 import cloudstorage as gcs
 import webapp2
@@ -35,6 +36,10 @@ coverimagesbystream = {}
 streamstoowner = {}
 myimages = list()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
+cron_rate = 60
+last_run_time = datetime.now()
+
+
 MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -601,28 +606,40 @@ class TrendingStreamsHandler(webapp.RequestHandler):
       self.redirect(cronjob)
 
 class CronJobHandler(webapp.RequestHandler):
-  def sendTrendEmail(self):
-    self.response.write('<html><body>Cron job successful.. </body></html>')
+  def sendTrendEmail(self, content):
+    #self.response.write('<html><body>Cron job successful.. </body></html>')
     emailAddress = "sadaf.syed@utexas.edu"
 
     message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Test Email")
 
     if not mail.is_email_valid(emailAddress):
-      self.response.out.write("Email address is not valid.")
+      #self.response.out.write("Email address is not valid.")
+      logging.info("Email address is not valid.")
 
     message.to = emailAddress
+    message.body = """%s""" %(content)
     message.send()
-    self.response.out.write("Message sent successfully!")
-  
-  def post(self):
-    checkboxValue = self.request.get('cronRate')
-    
-    if checkboxValue == "Five":
-      self.sendTrendEmail()
-    elif checkboxValue == "Ten":
-      self.sendTrendEmail()
-    elif checkboxValue == "NoReport":
-      self.response.write('<html><body>Trending Reports disabled.</body></html>')
+    #self.response.out.write("Message sent successfully!")
+ 
+  def get(self):
+    global last_run_time
+    current_run_time = datetime.now()
+    logging.info("Current Time: ")
+    logging.info(current_run_time) 
+    logging.info("Last run time: ")
+    logging.info(last_run_time)
+      
+    elapsedTime = current_run_time - last_run_time
+    elapsed = divmod(elapsedTime.total_seconds(), 60)
+    elapsedMins = int(elapsed[0])
+    if elapsedMins == cron_rate:
+      # get top three trending streams
+      content = "Email send after " + str(elapsedMins) + " minutes."
+      self.sendTrendEmail(content)
+      last_run_time = datetime.now()
+      logging.info("Email send after %d mins" % elapsedMins)
+    else:
+      logging.info("Elapsed mins: %d" % elapsedMins)
 
 application = webapp2.WSGIApplication([
     ('/', MainPage),
