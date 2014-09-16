@@ -520,12 +520,13 @@ class UploadImage(webapp2.RequestHandler):
     except Exception, e:  # pylint: disable=broad-except
       logging.exception(e)
       delete_files()
-      self.response.write('\n\nThere was an error writing the file! '
-                          'Please check the logs for more details.\n')
+      payload = json.dumps({"errorcode":1})
+      self.response.write(payload)
 
     else:
       #delete_files()
-      self.response.write('\n\nThe file was successfully uploaded!\n')
+      payload = json.dumps({"errorcode":0})
+      self.response.write(payload)
 
 #self.response.write(result)
 class ViewAllStreams(webapp2.RequestHandler):
