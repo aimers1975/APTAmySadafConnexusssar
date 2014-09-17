@@ -170,13 +170,20 @@ def create_file(filename, file, contenttype):
 #temporary helper to cleanup test files written
 def delete_files():
     logging.info('Deleting files...\n' + str(tmp_filenames_to_clean_up))
+    try:
+      logging.info("Trying to delete other files")
+      gcs.delete('/connexusssar.appspot.com/amytest/291f345c-3dfe-11e4-9bf9-013c001f4155')
+      gcs.delete('/connexusssar.appspot.com/amy5/d345d823-3d85-11e4-8a1a-3b8dc92b359b')
+      gcs.delete('/connexusssar.appspot.com/amy2/42d5a05c-3dfe-11e4-8678-013c001f4155')
+      gcs.delete('/connexusssar.appspot.com/amy2/278045d4-3d89-11e4-886e-47e63eb189f1')
+    except:
+      logging.info('Exception deleting static files.')
     for filename in tmp_filenames_to_clean_up:
       logging.info('Deleting file %s\n' % filename)
       try:
         gcs.delete(filename)
       except gcs.NotFoundError:
         pass
-
 
 def delete_images(imagefiles):
   logging.info('Deleting image: ' + str(imagefiles))
@@ -186,7 +193,6 @@ def delete_images(imagefiles):
       gcs.delete(filename)
     except gcs.NotFoundError:
       pass
-
 
 class MainPage(webapp2.RequestHandler):
   def get(self):
@@ -280,7 +286,20 @@ class CreateStream(webapp2.RequestHandler):
 
       streamname = data['streamname']
       logging.info('\nStreamname: ' + streamname)
-
+      owner = data['currentuser']
+      logging.info('\nOwner: ' + str(owner))
+      if(streamname == ''):
+        logging.info('Streamname is equal to empty string, we should exit.')
+        payload = {'errorcode':3}
+        result = json.dumps(payload)
+        self.response.write(result)
+        return 
+      if(owner == ''):
+        logging.info('Owner is equal to empty string, we should exit.')
+        payload = {'errorcode':2}
+        result = json.dumps(payload)
+        self.response.write(result)
+        return        
       if(not streamstoowner.has_key(streamname)):
         streamsubscribers = data['subscribers']
         addUserlistToSubscriptions(streamsubscribers,streamname)
@@ -292,8 +311,6 @@ class CreateStream(webapp2.RequestHandler):
         creationdate = str(datetime.now())
         logging.info('\nCreation date: ' + str(creationdate))
 
-        owner = data['currentuser']
-        logging.info('\nOwner: ' + str(owner))
         streamstoowner[streamname] = owner
 
         viewdatelist = list()
@@ -321,7 +338,7 @@ class CreateStream(webapp2.RequestHandler):
         logging.info('That streamname already exists')
         payload = {'errorcode':1}
     except:
-      payload = {'errorcode':1}
+      payload = {'errorcode':3}
     result = json.dumps(payload)
     self.response.write(result)
 
@@ -486,9 +503,6 @@ class UploadImage(webapp2.RequestHandler):
     #create an ID for the image - may not need this....
     imageid = str(uuid.uuid1())
     bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
-    self.response.headers['Content-Type'] = 'text/plain'
-    self.response.write('Testing uploade image, about to write ' + imagefilename + ' imagefile to datastore\n ')
-    self.response.write('Using bucket name: ' + bucket_name + 'Writing file for streamid: ' + streamname + '\n\n')
     #create location string for image   
     bucket = '/' + bucket_name
     filename = bucket + '/' + streamname + '/' + imageid
@@ -506,6 +520,7 @@ class UploadImage(webapp2.RequestHandler):
         if streamlist.has_key(streamname):
           streamlist[streamname]['imagelist'].append(thisimage)
       logging.info("Appstreams: " + str(appstreams))
+      payload = json.dumps({"errorcode":0})
       #self.read_file(filename)
       #self.response.write('\n\n')
       #self.stat_file(filename)
@@ -526,9 +541,9 @@ class UploadImage(webapp2.RequestHandler):
     else:
       #delete_files()
       payload = json.dumps({"errorcode":0})
-      self.response.write(payload)
+    self.response.write(payload)
 
-#self.response.write(result)
+
 class ViewAllStreams(webapp2.RequestHandler):
   def post(self):
     logging.info('View all streams has no json input.')
@@ -597,11 +612,11 @@ class DeleteStreams(webapp2.RequestHandler):
           logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort))
           logging.info('streamstoowner is now: ' + str(streamstoowner))
         else:
-          payload = {'errorcode':2}
+          payload = {'errorcode':4}
           logging.info('Key not found: ' + str(stream))
       payload = {'errorcode':0}
     except:
-      payload = {'errorcode':1}
+      payload = {'errorcode':100}
     result = json.dumps(payload)
     self.response.write(result)
 
