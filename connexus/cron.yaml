@@ -1,7 +1,4 @@
 cron:
-#- description: email trending streams every 5 minutes
-#  url: /cron/fivemins
-#  schedule: every 5 minutes
-#- description: email trending stream every 10 minutes
-#  url: /cron/tenmins
-#  schedule: every 10 minutes
+- description: send email every 5 minutes
+  url: /cron/cronjob
+  schedule: every 5 minutes
