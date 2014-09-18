@@ -439,7 +439,7 @@ class ViewStream(webapp2.RequestHandler):
         payload = {'picurls':list(), 'pagerange':list()}
     except:
       payload = {'picurls':'','pagerange':list()}
-    logging.info('Payload output is: ' + str(payload))
+    logging.info("Payload output is: " + str(payload))
     result = json.dumps(payload)
     self.response.write(result)
 
@@ -567,12 +567,34 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
-	def post(self):
-		data = json.loads(self.request.body)
-		logging.info('this is what Im looking for: ' + str(data))
-		payload = {'errorcode':1}
-		result = json.dumps(payload)
-		self.response.write(result)
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('this is what Im looking for: ' + str(data))
+     
+    streamFilterList = data['streamname']
+    logging.info('Stream filter: ' + str(streamFilterList)) 
+
+    streamFilter = streamFilterList[0]
+    
+    searchResultList = list()
+    for streamItem in allstreamsforsort:
+      if streamFilter in streamItem['streamname']:
+        searchResultList.append(streamItem)
+        #logging.info('Stream found with name match: ' + str(streamItem))
+
+    for streamItem in allstreamsforsort:
+      tagList = streamItem['taglist']
+      for tag in tagList:
+        if streamFilter in tag:
+          searchResultList.append(streamItem)
+          #logging.info('Stream found with tag match: ' + str(streamItem))
+
+    logging.info("SearchResultList: " + str(searchResultList))
+
+    result = json.dumps(searchResultList)
+    #payload = {'errorcode':1}
+    #result = json.dumps(payload)
+    self.response.write(result)
 
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
