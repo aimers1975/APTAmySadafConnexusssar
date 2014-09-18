@@ -39,47 +39,96 @@ cron_rate = 5
 last_run_time = datetime.now()
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
-MAIN_PAGE_HTML = """ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
+<div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
+<body><head><h1>Welcome To Connexus!</h1></head><h3>Sharing the world!<h3><br><br>
+<div><input id="login_name" name="login_name" class="element text medium" type="text" maxlength="255" value="Gmail User ID"/></div></><br>
+<input id="password" name="password" class="element text medium" type="text" maxlength="255" value="Gmail Password"/></div></><br>
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="saveForm" class="button_text" type="submit" name="submit" value="Login" /></></body></html>"""
+
+MGMT_PAGE_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
+<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div>            
+<body><head><h1>Connex.us</h1></head><h3>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Style Test</title>
+<style type="text/css">
+#list 
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
+.first { border-left: none; padding-left: 0; }
+</style>
 </head>
-<body id="main_body" >
-	<div id="form_container">
-		<form action="/GetStreamData" method="post">
-					<div class="form_description">
-			<h2>Create A Stream</h2>
-			<p>Provide information about your new stream.</p>
-		</div>						
-			<ul >
-			
-					<li id="li_2" >
-		<label class="description" for="element_2">Stream Name </label>
-		<div>
-			<input name="streamname" class="element text medium" type="text" maxlength="255" value=""/> 
-		</div> 
-		</li>		     <li id="li_4" >
-    <label class="description" for="element_4">URL To Cover Image </label>
-    <div>
-      <input name="coverurl" class="element text medium" type="text" maxlength="255" value=""/> 
-    </div> <p class="guidelines" id="guide_4"><small>Optional, may be left blank.</small></p>
-    </li>   <li id="li_1" >
-		<label class="description" for="element_1">List of subscribers </label>
-		<div>
-			<textarea name="subscribers" class="element textarea medium"></textarea> 
-		</div><p class="guidelines" id="guide_1"><small>Comma separated list.</small></p> 
-		</li>		<li id="li_3" >
-		<label class="description" for="element_3">Tags </label>
-		<div>
-			<textarea name="tags" class="element textarea medium"></textarea> 
-		</div><p class="guidelines" id="guide_3"><small>Comma separated list.</small></p> 
-		</li>
-			
-<div><input type="submit" value="CreateStream"></div>    			</ul>
-		</form>	
-	</div>
-	</body>
-</html>"""
+<body>
+<!--Need to add links for pages once done-->
+<ul id="list">
+<li class="horizontal first">Manage</li>
+<li class="horizontal">Create</li>
+<li class="horizontal">View</li>
+<li class="horizontal first">Search</li>
+<li class="horizontal">Trending</li>
+<li class="horizontal">Social</li>
+</ul>
+
+<h3>Streams I own</h3>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-
+
+bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Delete</th>
+  </tr>
+<!--will need to dynamically generate each row based on streamlist-->
+  <tr>
+    <td class="tg-031e">test2</td>
+    <td class="tg-031e"></td>
+    <td class="tg-031e"></td>
+<!--When dynamically genenerating will need each checkbox tied to streamname-->
+    <td class="tg-031e"><input id="element_1_1" name="element_1_1" class="element checkbox" type="checkbox" value="1" />
+</td>
+  </tr>
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete Checked Streams" /></></body></html>
+<h3>Streams I subscribe to</h3>
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-
+
+bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Views</th>
+    <th class="tg-031e">Unsubscribe</th>
+  </tr>
+  <tr>
+    <td class="tg-031e">test2</td>
+    <td class="tg-031e"></td>
+    <td class="tg-031e"></td>
+    <td class="tg-031e"></td>
+    <td class="tg-031e"><input id="element_1_1" name="element_1_1" class="element checkbox" type="checkbox" value="1" />
+</td>
+  </tr>
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe Checked Streams" /></></body></html>"""
 
 EMAIL_HTML = """\
 <html>
@@ -173,14 +222,6 @@ def create_file(filename, file, contenttype):
 #temporary helper to cleanup test files written
 def delete_files():
     logging.info('Deleting files...\n' + str(tmp_filenames_to_clean_up))
-    try:
-      logging.info("Trying to delete other files")
-      gcs.delete('/connexusssar.appspot.com/amytest/291f345c-3dfe-11e4-9bf9-013c001f4155')
-      gcs.delete('/connexusssar.appspot.com/amy5/d345d823-3d85-11e4-8a1a-3b8dc92b359b')
-      gcs.delete('/connexusssar.appspot.com/amy2/42d5a05c-3dfe-11e4-8678-013c001f4155')
-      gcs.delete('/connexusssar.appspot.com/amy2/278045d4-3d89-11e4-886e-47e63eb189f1')
-    except:
-      logging.info('Exception deleting static files.')
     for filename in tmp_filenames_to_clean_up:
       logging.info('Deleting file %s\n' % filename)
       try:
@@ -245,6 +286,14 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
     blob_info = blobstore.BlobInfo.get(resource)
     logging.info('Blob info is: ' + str(blob_info))
     self.send_blob(blob_info)
+
+class Login(webapp2.RequestHandler):
+
+  def post(self):
+    login = cgi.escape(self.request.get('login_name'))
+    password = cgi.escape(self.request.get('password'))
+    logging.info("Login is: " + str(login))
+    logging.info("password is: " + str(password))
 
 class GetStreamData(webapp2.RequestHandler):
 	#Gets create stream data from the HTML page
@@ -596,6 +645,11 @@ class SearchStreams(webapp2.RequestHandler):
     #result = json.dumps(payload)
     self.response.write(result)
 
+class HandleMgmtForm(webapp2.RequestHandler):
+  def post(self):
+    #login = cgi.escape(self.request.get(''))
+    logging.info("Management form data: " + str(self.request))
+
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
     try:
@@ -786,6 +840,8 @@ application = webapp2.WSGIApplication([
     ('/upload', UploadHandler),
     ('/serve/([^/]+)?', ServeHandler),
     ('/UploadImage', UploadImage),
+    ('/Login', Login),
+    ('/HandleMgmtForm', HandleMgmtForm),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
