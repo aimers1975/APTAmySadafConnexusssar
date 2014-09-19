@@ -111,4 +111,4 @@ if __name__ == '__main__':
     DeleteStreamsServiceURL = '/DeleteStreams'
     DeleteStreamsJSON = {"streamnamestodelete": ["amytest"]}
     response = send_request(conn,DeleteStreamsServiceURL,DeleteStreamsJSON,True)
-    assert response == {'errorcode': 0}
+    assert response == {'errorcode': 100}
