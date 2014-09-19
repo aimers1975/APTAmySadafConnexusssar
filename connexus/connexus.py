@@ -27,6 +27,7 @@ gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
 appstreams = {}
 allstreamsforsort = list()
+allstreamsbycreationtime = list()
 #this is the list of subscriptions for quick search, key is userid, value is the list of streams they are subscribed to
 subscriptions = {}
 #this is the list of cover images, key us streamname, value is coverimage url.
@@ -161,11 +162,15 @@ TRENDING_STREAMS_HTML = """\
 """
 
 def olderthanhour(checktimestring):
-  hourago = datetime.now() - timedelta(hours=1)
-  if(checktimestring < hourago.isoformat()):
-    return true
+  hourago = datetime.now() - timedelta(minutes=1)
+  if(checktimestring < str(hourago)):
+    logging.info("checktimestring: " + str(checktimestring) + " hour ago: " + str(hourago))
+    logging.info("returning true")
+    return True
   else:
-    return false
+    logging.info("checktimestring: " + str(checktimestring) + " hour ago: " + str(hourago))
+    logging.info("returning false")
+    return False
 
 
 def addcoverurl(coverurl,streamname):
@@ -380,9 +385,11 @@ class CreateStream(webapp2.RequestHandler):
         if (not appstreams.has_key(owner)):
           appstreams[owner] = {streamname:thisstream}
           allstreamsforsort.append(thisstream)
+          allstreamsbycreationtime.append(thisstream)
         else:
           appstreams[owner][streamname] = thisstream
           allstreamsforsort.append(thisstream)
+          allstreamsbycreationtime.append(thisstream)
         logging.info('My current stream list is: ' + str(len(appstreams)))
         logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort)) 
         payload = {'errorcode':0}
@@ -448,30 +455,39 @@ class ViewStream(webapp2.RequestHandler):
       currentstream = appstreams[streamstoowner[streamname]][streamname]
       logging.info('The stream retrieved for viewing is: ' + str(currentstream))
       index = allstreamsforsort.index(currentstream)
-      logging.info('The index found is: ' + str(index))
       logging.info('Stream: ' + str(streamname) + ' found at index: ' + str(index))
-      thisstream = allstreamsforsort[index]
-      logging.info("Streamdata found: " + str(thisstream))
-      for x in range(0,len(allstreamsforsort[index]['viewdatelist'])):
-        if(olderthanhour(allstreamsforsort[index]['viewdatelist'][x])):
-          allstreamsforsort[index]['viewdatelist'].remove(allstreamsforsort[index]['viewdatelist'][x])
+      removelist = list()
+      logging.info("Viewdatelist length: " + str(len(allstreamsforsort[index]['viewdatelist'])))
+      for date in allstreamsforsort[index]['viewdatelist']:
+        logging.info("Calling older than hour with input: " + str(date))
+        if(olderthanhour(date)):
+          logging.info("Removing item.")
+          removelist.append(date)
+      for date in removelist:    
+        allstreamsforsort[index]['viewdatelist'].remove(date)
       allstreamsforsort[index]['viewdatelist'].append(str(datetime.now()))
-      logging.info("Added view date")
-      for thisindex in xrange(index,0,-1):
-        logging.info('Started for loop. Thisindex is: ' + str(thisindex))
-        newcount = len(allstreamsforsort[thisindex]['viewdatelist'])
-        logging.info('Newcount: ' + str(newcount))
-        logging.info('Allstreamsforsort: ' + str(allstreamsforsort))
-        nextcount = len(allstreamsforsort[thisindex-1]['viewdatelist'])
-        logging.info('Loop index is now: ' + str(thisindex))
-        logging.info('Newcount: ' + str(newcount) + ' next count: ' + str(nextcount))
-        if newcount > nextcount: #swap 
-          temp = allstreamsforsort[thisindex-1]
-          allstreamsforsort[thisindex-1] = allstreamsforsort[thisindex]
-          allstreamsforsort[thisindex] = temp
-        else: #we're no longer moving up the list
-          break
-      images = thisstream['imagelist']
+      logging.info("Viewdatelist length: " + str(len(allstreamsforsort[index]['viewdatelist'])))
+      allstreamsforsort.remove(currentstream)
+      logging.info("removed allstream for sort index")
+      if len(allstreamsforsort) > 0:
+        for x in range(0,len(allstreamsforsort)):
+          logging.info("Starting for loop x=" + str(x))
+          if len(currentstream['viewdatelist']) < len(allstreamsforsort[x]['viewdatelist']):
+            if (x == (len(allstreamsforsort)-1)):
+              logging.info('End of list, insert at end')
+              allstreamsforsort.insert(len(allstreamsforsort),currentstream)
+              break
+            else:
+              logging.info('keep going')
+          else:
+            logging.info('found spot at: ' + str(x))
+            allstreamsforsort.insert(x, currentstream)
+            break
+      else:
+        logging.info("Allstreamsforsort length is 0")
+        allstreamsforsort.append(currentstream)
+      logging.info(str(allstreamsforsort))
+      images = currentstream['imagelist']
       logging.info('Images list: ' + str(images))
       start = int(pagerange[0])
       logging.info('Pagerange start: ' + str(start))
@@ -601,13 +617,11 @@ class ViewAllStreams(webapp2.RequestHandler):
     logging.info('View all streams has no json input.')
     totalstreams = list()
     coverurls = list()
-    for streamlist in appstreams.itervalues():
-      logging.info('streamlist from appstreams: ' + str(streamlist) + ' The type is: ' + str(type(streamlist)))
-      totalstreams.append(streamlist)
-      for stream in streamlist.itervalues():
+    for stream in allstreamsbycreationtime:
         logging.info("This stream is: " + str(stream))
+        totalstreams.append(stream['streamname'])
         coverurls.append(stream['coverurl'])
-    for stream in allstreamsforsort:
+    for stream in allstreamsforsort: 
       stream['viewdatelist'].append(str(datetime.now()))
     logging.info("Total streams: " + str(totalstreams))
     logging.info("Coverurls: " + str(coverurls))
@@ -685,6 +699,7 @@ class DeleteStreams(webapp2.RequestHandler):
           if (len(appstreams[streamstoowner[stream]]) == 0):
             appstreams.pop(streamstoowner[stream])
           allstreamsforsort.remove(thisstream)
+          allstreamsbycreationtime.remove(thisstream)
           streamstoowner.pop(stream)
           logging.info("Appstreams is now: " + str(appstreams))
           logging.info('subscriptions is now: ' + str(subscriptions))
