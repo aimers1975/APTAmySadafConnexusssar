@@ -35,8 +35,9 @@ coverimagesbystream = {}
 streamstoowner = {}
 cronrate = 'five'
 myimages = list()
-cron_rate = 5
+cron_rate = 60
 last_run_time = datetime.now()
+first_run = False
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
@@ -812,6 +813,7 @@ class CronJobHandler(webapp.RequestHandler):
   
   def get(self):
     global last_run_time
+    
     current_run_time = datetime.now()
     logging.info("Current Time: ")
     logging.info(current_run_time) 
@@ -821,6 +823,7 @@ class CronJobHandler(webapp.RequestHandler):
     elapsedTime = current_run_time - last_run_time
     elapsed = divmod(elapsedTime.total_seconds(), 60)
     elapsedMins = int(elapsed[0])
+
     if elapsedMins == cron_rate:
       # get top three trending streams
       content = "Email send after " + str(elapsedMins) + " minutes."
