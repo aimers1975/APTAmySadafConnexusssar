@@ -49,7 +49,7 @@ MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</titl
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
 <input id="saveForm" class="button_text" type="submit" name="submit" value="Login" /></></body></html>"""
 
-MGMT_PAGE_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
+HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div>            
 <body><head><h1>Connex.us</h1></head><h3>
 <head>
@@ -64,15 +64,15 @@ MGMT_PAGE_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <body>
 <!--Need to add links for pages once done-->
 <ul id="list">
-<li class="horizontal first">Manage</li>
-<li class="horizontal">Create</li>
-<li class="horizontal">View</li>
-<li class="horizontal first">Search</li>
-<li class="horizontal">Trending</li>
-<li class="horizontal">Social</li>
-</ul>
+<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
+<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
+<li class="horizontal"><a href="http://%s/ViewPage">View</a></li>
+<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
+<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
+<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
+</ul>"""
 
-<h3>Streams I own</h3>
+MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
@@ -253,9 +253,35 @@ class MgmtPage(webapp2.RequestHandler):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
     if user:
-      self.response.write(MGMT_PAGE_HTML)
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + MGMT_PAGE_HTML
+      self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
+
+class CreatePage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Create page coming soon</body></html>"
+    self.response.write(fullhtml)
+
+class ViewPage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> View page coming soon</body></html>"
+    self.response.write(fullhtml)
+
+class SearchPage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Search page coming soon</body></html>"
+    self.response.write(fullhtml)
+
+class TrendingPage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Trending page coming soon</body></html>"
+    self.response.write(fullhtml)
+
+class SocialPage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Social page coming soon</body></html>"
+    self.response.write(fullhtml)
 
 #Sample function, we may not use
 class GCSHandler(webapp2.RequestHandler):
@@ -865,6 +891,11 @@ application = webapp2.WSGIApplication([
     ('/Login', Login),
     ('/HandleMgmtForm', HandleMgmtForm),
     ('/MgmtPage', MgmtPage),
+    ('/CreatePage', CreatePage),
+    ('/ViewPage', ViewPage),
+    ('/SearchPage', SearchPage),
+    ('/TrendingPage', TrendingPage),
+    ('/SocialPage', SocialPage),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
