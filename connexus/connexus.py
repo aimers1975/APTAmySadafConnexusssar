@@ -250,8 +250,17 @@ class MainPage(webapp2.RequestHandler):
 
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
-    user = users.get_current_user()
-    logging.info("Current user is: " + str(user))
+    user = str(users.get_current_user())
+    logging.info("Current user is: " + user)
+    mydata = json.dumps({'userid':user})
+    url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
+    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+    logging.info(str(result.content))
+    resultobj = json.loads(result.content)
+    streamsiown = resultobj['streamlist']
+    streamsisubscribe = resultobj['subscribedstreamlist']
+    logging.info("Owned streams: " + str(streamsiown))
+    logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
       fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + MGMT_PAGE_HTML
       self.response.write(fullhtml)
@@ -450,27 +459,26 @@ class ManageStream(webapp2.RequestHandler):
     logging.info('Json data from call: ' + str(data))
     userid = data['userid']
     logging.info('Userid: ' + str(userid))
-    logging.info('Appstreams: ' + str(appstreams))
-    if(subscriptions.has_key(userid)):
-      logging.info('This user has subscriptions: ' + str(userid))
-      thisusersubscriptions = subscriptions[userid]
-    else:
-      logging.info(str(userid) + ' not found, returning empty subscription lists')
-      thisusersubscriptions = list()
-    if(appstreams.has_key(userid)):
-      logging.info('This user has streams: ' + str(userid))
-      thisuserstreams = appstreams[userid]
-    else:
-      logging.info(str(userid) + ' not found, return empty streamlist')
-      thisuserstreams = list()
+
+    #TODO: loop through all streams for sort and find all streams for this owner
+    thisuserstreams = list()
     thisusersubscriptionlist = list()
-    logging.info('allstreamsforsort is now: ' + str(allstreamsforsort))
-    logging.info('subscriptions are: ' + str(thisusersubscriptions))
-    for name in thisusersubscriptions:
-      logging.info("Looking for stream: " + name)
-      currentstream = appstreams[streamstoowner[name]][name]
-      logging.info('Current stream appending to subscribed list: ' + str(currentstream))
-      thisusersubscriptionlist.append(currentstream)
+    logging.info('Allstreamsforsort is: ' + str(allstreamsforsort))
+    for stream in allstreamsforsort:
+      if stream['owner'] == userid:
+        thisuserstreams.append(stream)
+      try:
+        logging.info("Checking to see if subscriberlist has id: " + str(userid))
+        logging.info("Subscriberlist: " + str(stream['subscriberlist']))
+        stream['subscriberlist'].index(userid) 
+        logging.info('appending stream to subscribed streams')
+        thisusersubscriptionlist.append(stream)
+        logging.info('the stream was appended.')
+      except:
+        logging.info("Stream " + str(stream) + ' does not have subsciber ' + str(userid))
+    logging.info("This users streams: " + str(thisuserstreams))
+    logging.info('subscriptionlist: ' + str(thisusersubscriptionlist))
+    
     payload = {'streamlist':thisuserstreams,'subscribedstreamlist':thisusersubscriptionlist}
     result = json.dumps(payload)
     self.response.write(result)
@@ -482,8 +490,11 @@ class ViewStream(webapp2.RequestHandler):
     streamname = data['streamname']
     pagerange = data['pagerange']
     try:
-      logging.info('streamstoowner[streamname]: ' + str(streamstoowner[streamname]) )
-      currentstream = appstreams[streamstoowner[streamname]][streamname]
+      currentstream = {}
+      for stream in allstreamsforsort:
+        if stream['streamname'] == streamname:
+          currentstream = stream
+
       logging.info('The stream retrieved for viewing is: ' + str(currentstream))
       index = allstreamsforsort.index(currentstream)
       logging.info('Stream: ' + str(streamname) + ' found at index: ' + str(index))
@@ -614,11 +625,12 @@ class UploadImage(webapp2.RequestHandler):
       thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':imagefileurl}
       logging.info('Image object created: ' + str(thisimage))
       logging.info("starting stream search loop")
-      logging.info("My streams: " + str(appstreams))
-      for streamlist in appstreams.itervalues():
-        if streamlist.has_key(streamname):
-          streamlist[streamname]['imagelist'].append(thisimage)
-      logging.info("Appstreams: " + str(appstreams))
+
+      for stream in allstreamsforsort:
+        if stream['streamname'] == streamname:
+          logging.info("Found stream, appending image to imagelist")
+          stream['imagelist'].append(thisimage)
+      logging.info("Allstreamsforsort: " + str(allstreamsforsort))
       payload = json.dumps({"errorcode":0})
       #self.read_file(filename)
       #self.response.write('\n\n')

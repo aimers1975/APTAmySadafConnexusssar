@@ -1,1 +1,1 @@
-{"streamstodelete": ["amy1", "amy2"]}
+{"streamnamestodelete": ["amy1", "amy2"]}
