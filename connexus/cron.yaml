@@ -1,5 +1,5 @@
 cron:
 #- description: send email every 5 minutes
 #  url: /cron/cronjob
-#  schedule: every 2 minutes
+#  schedule: every 5 minutes
 #  target: module1

@@ -36,7 +36,7 @@ coverimagesbystream = {}
 streamstoowner = {}
 cronrate = 'five'
 myimages = list()
-cron_rate = 60
+cron_rate = 5
 last_run_time = datetime.now()
 first_run = False
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
@@ -148,7 +148,7 @@ TRENDING_STREAMS_HTML = """\
 <html>
   <body>
     <H2>Top 3 Trending Streams</H2>
-    <form action="/cron/cronjob" method="post">
+    <form action="/cronSettings" method="post">
       <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
       <input type="checkbox" name="cronRate" value="Ten"> Every 10 minutes
       <input type="submit" value="Update Rate">
@@ -828,6 +828,7 @@ class TrendingStreams(webapp.RequestHandler):
 
 class TrendingStreamsHandler(webapp.RequestHandler):
   def post(self):
+    global cron_rate
     checkboxValue = self.request.get('cronRate')
     self.response.write('<html><body>Cron Rate is: <pre>')
     self.response.write(cgi.escape(self.request.get('cronRate')))
@@ -840,16 +841,18 @@ class TrendingStreamsHandler(webapp.RequestHandler):
       logging.info("Found checkbox five.")
       self.response.write('<html><body>Cron Rate is Five')
       self.response.write('</body></html>')
-      cronjob = '/cron/fivemins'
-      logging.info("Redirecing to cronjob fivemin.")
-      self.redirect(cronjob)
+      cron_rate = 5
+      #cronjob = '/cron/fivemins'
+      #logging.info("Redirecing to cronjob fivemin.")
+      #self.redirect(cronjob)
     else:
       logging.info("Found checkbox 10.")
       self.response.write('<html><body>Cron Rate is Ten')
       self.response.write('</body></html>')
-      cronjob = '/cron/tenmins'
-      logging.info("Redirecing to cronjob fivemin.")
-      self.redirect(cronjob)
+      cron_rate = 10
+      #cronjob = '/cron/tenmins'
+      #logging.info("Redirecing to cronjob fivemin.")
+      #self.redirect(cronjob)
 
 class CronJobHandler(webapp.RequestHandler):
   def sendTrendEmail(self, content):
