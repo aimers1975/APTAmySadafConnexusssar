@@ -75,11 +75,8 @@ MGMT_PAGE_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-
-
-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
-</style>
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
 <table class="tg">
   <tr>
     <th class="tg-031e">Name</th>
@@ -105,9 +102,7 @@ bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-
-
-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
 .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
 </style>
 <table class="tg">
@@ -249,6 +244,15 @@ class MainPage(webapp2.RequestHandler):
     logging.info("Current user is: " + str(user))
     if user:
       self.response.write(MAIN_PAGE_HTML)
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
+
+class MgmtPage(webapp2.RequestHandler):
+  def get(self):
+    user = users.get_current_user()
+    logging.info("Current user is: " + str(user))
+    if user:
+      self.response.write(MGMT_PAGE_HTML)
     else:
       self.redirect(users.create_login_url(self.request.uri))
 
@@ -857,6 +861,7 @@ application = webapp2.WSGIApplication([
     ('/UploadImage', UploadImage),
     ('/Login', Login),
     ('/HandleMgmtForm', HandleMgmtForm),
+    ('/MgmtPage', MgmtPage),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
