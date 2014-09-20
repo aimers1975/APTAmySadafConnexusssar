@@ -7,6 +7,7 @@ from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
 from datetime import datetime,timedelta
 from time import gmtime, strftime
+from google.appengine.ext import ndb
 import cloudstorage as gcs
 import webapp2
 import logging
@@ -27,6 +28,7 @@ gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
 allstreamsforsort = list()
 allstreamsbycreationtime = list()
+ds_key = ndb.Key('connexusssar', 'connexusssar')
 
 cronrate = 'five'
 myimages = list()
@@ -230,14 +232,27 @@ class MainPage(webapp2.RequestHandler):
     else:
       self.redirect(users.create_login_url(self.request.uri))
 
+class Stream(ndb.Model):
+  streamname = ndb.StringProperty(indexed=True)
+  creationdate = ndb.StringProperty()
+  viewdatelist = ndb.StringProperty(repeated=True)
+  viewdatelistlength = ndb.IntegerProperty()
+  owner = ndb.StringProperty()
+  streamsubscribers = ndb.StringProperty(repeated=True)
+  taglist = ndb.StringProperty(indexed=False,repeated=True)
+  coverurl = ndb.StringProperty(indexed=False)
+  commentlist = ndb.StringProperty(indexed=False,repeated=True) 
+  coverurl = ndb.StringProperty(indexed=False)
+  imagelist = ndb.StringProperty(indexed=False,repeated=True)
+
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
     user = str(users.get_current_user())
     logging.info("Current user is: " + user)
-    mydata = json.dumps({'userid':user})
+    mydata = json.dumps({'userid':'amy_hindman@yahoo.com'})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
     result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-    logging.info(str(result.content))
+    logging.info('Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     streamsiown = resultobj['streamlist']
     streamsisubscribe = resultobj['subscribedstreamlist']
@@ -381,34 +396,60 @@ class CreateStream(webapp2.RequestHandler):
         return        
       #TODO: Check that streamname doens't aready exist
       logging.info('Check if stream exists')
-      alreadypresent = False
-      for stream in allstreamsforsort:
-        if stream['streamname'] == streamname:
+      present_query = Stream.query(Stream.streamname == streamname)
+      try:
+        existsstream = present_query.get()
+        logging.info('Query returned: ' + str(existsstream))
+        if existsstream == None:
+          alreadypresent = False
+        else:
+          logging.info('Setting already present to True')
           alreadypresent = True
-          logging.info('That streamname already exists')
           payload = {'errorcode':1}
-      if not alreadypresent:
-        streamsubscribers = data['subscribers']
-        logging.info('\nstreamsubscribers: ' + str(streamsubscribers))
+      except:
+        logging.info('exception occurred, set already present to True to skip create')
+        alreadypresent = True
+        payload = {'errorcode':3}
 
-        taglist = data ['tags']
-        logging.info('\nTaglist: ' + str(taglist))
+
+      if not alreadypresent:
+        stream = Stream(parent=ndb.Key('connexusssar', 'connexusssar'))
+        stream.streamname = streamname
 
         creationdate = str(datetime.now())
+        stream.creationdate = creationdate
         logging.info('\nCreation date: ' + str(creationdate))
 
         viewdatelist = list()
+        stream.viewdatelist = viewdatelist
         logging.info('\nViewdatelist: ' + str(viewdatelist))
 
-        commentlist = list()
-        logging.info('\nCommentlist: ' + str(commentlist))
+        stream.viewdatelistlength = 0
+
+        stream.owner = owner
+
+        streamsubscribers = data['subscribers']
+        stream.subscribers = streamsubscribers
+        logging.info('\nstreamsubscribers: ' + str(streamsubscribers))
+
+        taglist = data ['tags']
+        stream.taglist = taglist
+        logging.info('\nTaglist: ' + str(taglist))
 
         coverurl = data['coverurl']
+        stream.coverurl = coverurl
         logging.info('\nCoverurl: ' + str(coverurl))
 
+        commentlist = list()
+        stream.commentlist = commentlist
+        logging.info('\nCommentlist: ' + str(commentlist))
+
         imagelist = list()
+        stream.imagelist = imagelist
         logging.info('\nImagelist: ' + str(imagelist))
-        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'coverurl':coverurl,'imagelist':imagelist}
+        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'imagelist':imagelist}
+
+        stream.put()
         allstreamsforsort.append(thisstream)
         allstreamsbycreationtime.append(thisstream)
           
@@ -694,7 +735,16 @@ class DeleteStreams(webapp2.RequestHandler):
       deletestreams = data['streamnamestodelete']
       #iterate through list of streams input
       payload = {'errorcode':100}
+      stream_keys = list()
+      logging.info('Before for loop')
       for deletestream in deletestreams:
+        logging.info("Starting fetch key for: " + str(deletestream))
+        stream_query = Stream.query(Stream.streamname == deletestream)
+        logging.info('Created query')
+        mydeletestream = stream_query.get()
+        logging.info("past query")
+        logging.info("My key is: " + str(mydeletestream.key))
+        stream_keys.append(mydeletestream.key)
         logging.info("Deleting streamname: " + str(deletestream))
         index = -1
         for stream in allstreamsforsort:
@@ -717,6 +767,9 @@ class DeleteStreams(webapp2.RequestHandler):
             allstreamsforsort.remove(stream)
             allstreamsbycreationtime.remove(stream)
             payload = {'errorcode':0}
+      logging.info('Trying to really delete from db.')
+      ndb.delete_multi(stream_keys)
+      logging.info('deleted from db')
       logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort))
     except:
       payload = {'errorcode':100}
