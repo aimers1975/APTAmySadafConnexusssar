@@ -80,15 +80,8 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
     <th class="tg-031e">Number of Pictures</th>
     <th class="tg-031e">Delete</th>
   </tr>
-<!--will need to dynamically generate each row based on streamlist-->
-  <tr>
-    <td class="tg-031e">test2</td>
-    <td class="tg-031e"></td>
-    <td class="tg-031e"></td>
-<!--When dynamically genenerating will need each checkbox tied to streamname-->
-    <td class="tg-031e"><input id="element_1_1" name="element_1_1" class="element checkbox" type="checkbox" value="1" />
-</td>
-  </tr>
+<!--will need to dynamically generate each ITEM based on streamlist-->
+%s
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
@@ -109,14 +102,7 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
     <th class="tg-031e">Views</th>
     <th class="tg-031e">Unsubscribe</th>
   </tr>
-  <tr>
-    <td class="tg-031e">test2</td>
-    <td class="tg-031e"></td>
-    <td class="tg-031e"></td>
-    <td class="tg-031e"></td>
-    <td class="tg-031e"><input id="element_1_1" name="element_1_1" class="element checkbox" type="checkbox" value="1" />
-</td>
-  </tr>
+%s
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
@@ -193,6 +179,33 @@ def olderthanhour(checktimestring):
     logging.info("returning false")
     return False
 
+def generatestreamsiownlist(updatelist):
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="'
+  MIDDLE_CHECKBOX = '" name="'
+  END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
+  htmlstringfinal = ""
+  length = len(updatelist['streamnames'])
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
+  return htmlstringfinal
+
+def generatestreamssubscribed(updatelist):
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="'
+  MIDDLE_CHECKBOX = '" name="'
+  END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
+  htmlstringfinal = ""
+  length = len(updatelist['streamnames'])
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
+  return htmlstringfinal  
 
 def addcoverurl(coverurl,streamname):
   logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
@@ -292,6 +305,8 @@ class MgmtPage(webapp2.RequestHandler):
     streamsiown = resultobj['streamlist']
     streamsisubscribe = resultobj['subscribedstreamlist']
     #get the list of streamnames I own:
+    myupdatelist = {'streamnames':list(),'dates':list(),'imagenums':list()}
+    myupdatelist2 = {'streamnames':list(),'dates':list(),'views':list(),'imagenums':list()}
     for ownstreams in streamsiown:
       name = ownstreams['streamname']
       logging.info("This stream name is: " + str(name))
@@ -299,12 +314,39 @@ class MgmtPage(webapp2.RequestHandler):
       logging.info('This stream imagelist: ' + str(imagelist))
       numpics = len(imagelist)
       logging.info('This stream imagelist length' + str(numpics))
-      lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      if len(imagelist) == 0:
+        lastnewpicdate = 'N/A'
+      else:
+        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
       logging.info("Creation date: " + lastnewpicdate)
+      myupdatelist['streamnames'].append(name)
+      myupdatelist['dates'].append(lastnewpicdate)
+      myupdatelist['imagenums'].append(numpics)
+    logging.info('My update list to generate html rows: ' + str(myupdatelist))
+    for ownstreams in streamsisubscribe:
+      name = ownstreams['streamname']
+      logging.info("This stream name is: " + str(name))
+      imagelist = ownstreams['imagelist']
+      logging.info('This stream imagelist: ' + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist length' + str(numpics))
+      if len(imagelist) == 0:
+        lastnewpicdate = 'N/A'
+      else:
+        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Creation date: " + lastnewpicdate)
+      myviews = ownstreams['viewdatelistlength']
+      myupdatelist2['streamnames'].append(name)
+      myupdatelist2['dates'].append(lastnewpicdate)
+      myupdatelist2['views'].append(myviews)
+      myupdatelist2['imagenums'].append(numpics)
+    logging.info('My update list to generate html rows: ' + str(myupdatelist2))
+    mystreamshtml = generatestreamsiownlist(myupdatelist)
+    mysubscribeshtml = generatestreamssubscribed(myupdatelist2)
     logging.info("Owned streams: " + str(streamsiown))
     logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + MGMT_PAGE_HTML
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
