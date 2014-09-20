@@ -14,6 +14,7 @@ import logging
 import json
 import cgi
 import urllib
+from urlparse import urlparse
 import re
 import os
 import uuid
@@ -30,7 +31,7 @@ ds_key = ndb.Key('connexusssar', 'connexusssar')
 
 cronrate = 'five'
 myimages = list()
-cron_rate = 5
+cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
@@ -45,7 +46,7 @@ MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</titl
 
 HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div>            
-<body><head><h1>Connex.us</h1></head><h3>
+<body><head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Style Test</title>
@@ -138,17 +139,47 @@ EMAIL_HTML = """\
 </html>
 """
 
+TRENDING_PAGE_STYLE = """\
+<style>
+#section {
+    width:350px;
+    float:left;
+    padding:10px;    
+}
+#footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+   padding:5px;    
+}
+</style>
+"""
+
 TRENDING_STREAMS_HTML = """\
-<html>
-  <body>
-    <H2>Top 3 Trending Streams</H2>
-    <form action="/cronSettings" method="post">
-      <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
-      <input type="checkbox" name="cronRate" value="Ten"> Every 10 minutes
-      <input type="submit" value="Update Rate">
-    </form>
-  </body>
-</html>
+<div id="section">
+  <H2>Top 3 Trending Streams</H2>
+  <form action="/GetMostViewedStreams" method="post">
+    <ul id="list">
+      <li>Stream 1</li>  
+      <li>Stream 2</li>
+      <li>Stream 3</li>
+    </ul>
+  </form>
+</div>
+"""
+
+TRENDING_REPORT_HTML = """\
+<div id="aside">
+  <form action="/cronSettings" method="post">
+    <input type="checkbox" name="cronRate" value="No"> No reports<br>
+    <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
+    <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
+    <input type="checkbox" name="cronRate" value="Day"> Every day<br>
+    <p> Email Trending Report </p>
+    <input type="submit" value="Update Rate">
+  </form>
+</div>
 """
 
 def olderthanhour(checktimestring):
@@ -285,7 +316,8 @@ class SearchPage(webapp2.RequestHandler):
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Trending page coming soon</body></html>"
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + TRENDING_STREAMS_HTML + TRENDING_REPORT_HTML + "</body></html>"
+    #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
 class SocialPage(webapp2.RequestHandler):
@@ -761,6 +793,15 @@ class HandleMgmtForm(webapp2.RequestHandler):
   def post(self):
     #login = cgi.escape(self.request.get(''))
     logging.info("Management form data: " + str(self.request))
+    #referer = self.request.environ['HTTP_REFERER']
+    #logging.info("Referer: " + str(referer))
+    #parsedUrl = urlparse(str(referer))
+    #logging.info("Parsed Url: " + str(parsedUrl))
+    #if parsedUrl.path == '/TrendingPage':
+     # cronRateValue = self.request.get('cronRate')
+     # logging.info("CronRate is " + cronRateValue)
+     # redirectStr = '/cronSettings')
+     # self.redirect(redirectStr)
 
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
@@ -828,6 +869,7 @@ class UnsubscribeStreams(webapp2.RequestHandler):
 
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
+    self.response.write('<html><body>TrendingStreamsHandler...</body></html>')
     data = json.loads(self.request.body)
     logging.info('No json data for this call')
     logging.info('Get all streams by most viewed')
@@ -898,29 +940,19 @@ class TrendingStreamsHandler(webapp.RequestHandler):
   def post(self):
     global cron_rate
     checkboxValue = self.request.get('cronRate')
-    self.response.write('<html><body>Cron Rate is: <pre>')
-    self.response.write(cgi.escape(self.request.get('cronRate')))
-    self.response.write('</pre></body></html>')
 
     logging.info('Cron rate selected: ' + str(checkboxValue))
 
-    five = 'Five'
     if checkboxValue == 'Five':
-      logging.info("Found checkbox five.")
-      self.response.write('<html><body>Cron Rate is Five')
-      self.response.write('</body></html>')
       cron_rate = 5
-      #cronjob = '/cron/fivemins'
-      #logging.info("Redirecing to cronjob fivemin.")
-      #self.redirect(cronjob)
-    else:
-      logging.info("Found checkbox 10.")
-      self.response.write('<html><body>Cron Rate is Ten')
-      self.response.write('</body></html>')
-      cron_rate = 10
-      #cronjob = '/cron/tenmins'
-      #logging.info("Redirecing to cronjob fivemin.")
-      #self.redirect(cronjob)
+    elif checkboxValue == 'Hour': 
+      cron_rate = 60
+    elif checkboxValue == 'Day':
+      cron_rate = 1440
+    elif checkboxValue == 'No':
+      cron_rate = -1
+    logging.info("Cron Rate is now %d." % cron_rate)
+    self.redirect('/TrendingPage')
 
 class CronJobHandler(webapp.RequestHandler):
   def sendTrendEmail(self, content):
@@ -958,6 +990,9 @@ class CronJobHandler(webapp.RequestHandler):
       self.sendTrendEmail(content)
       last_run_time = datetime.now()
       logging.info("Email send after %d mins" % elapsedMins)
+    elif cron_rate == -1:
+      last_run_time = datetime.now()
+      logging.info("Trending Emails are turned off.")
     else:
       logging.info("Elapsed mins: %d" % elapsedMins)
 
