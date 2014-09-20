@@ -34,7 +34,7 @@ myimages = list()
 cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -146,13 +146,6 @@ TRENDING_PAGE_STYLE = """\
     float:left;
     padding:10px;    
 }
-#footer {
-    background-color:black;
-    color:white;
-    clear:both;
-    text-align:center;
-   padding:5px;    
-}
 </style>
 """
 
@@ -180,6 +173,22 @@ TRENDING_REPORT_HTML = """\
     <input type="submit" value="Update Rate">
   </form>
 </div>
+"""
+
+SEARCH_STREAMS_HTML = """\
+<div id="section">
+  <form action="/SearchStreams" method="post">
+    <input placeholder="Stream Name:">
+    <input type="submit" value="Search">
+  </form>
+</div>
+"""
+
+SEARCH_RESULT_HTML = """\
+<div id="article">
+  <form>
+  </form>
+<div>
 """
 
 def olderthanhour(checktimestring):
@@ -323,11 +332,19 @@ class ViewPage(webapp2.RequestHandler):
 
 class SearchPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Search page coming soon</body></html>"
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + SEARCH_RESULT_HTML + "</body></html>"
     self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
+    url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
+    params = json.dumps({})
+    logging.info('URL for GetMostViewedStreams is : ' + str(url))
+    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+    logging.info('GetMostViewedStreams Result is: ' + str(result.content))
+    resultobj = json.loads(result.content)
+    trendingStreams = resultobj['mostviewedstreams']
+    logging.info('TrendingStreams: ' + str(trendingStreams))
     fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + TRENDING_STREAMS_HTML + TRENDING_REPORT_HTML + "</body></html>"
     #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
@@ -891,6 +908,7 @@ class UnsubscribeStreams(webapp2.RequestHandler):
 
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
+    logging.info("Entering GetMostViewedStreams handler")
     data = json.loads(self.request.body)
     logging.info('No json data for this call')
     logging.info('Get all streams by most viewed')
@@ -912,6 +930,7 @@ class GetMostViewedStreams(webapp2.RequestHandler):
     payload = {'mostviewedstreams':newmostviewedlist}
     result = json.dumps(payload)
     self.response.write(result)
+    logging.info("Exiting GetMostViewedStreams handler")
 
 class Report(webapp2.RequestHandler):
 	def post(self):
@@ -955,7 +974,9 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 
 class TrendingStreams(webapp.RequestHandler):
   def get(self):
+    logging.info("Entering TredningStreams handler")
     self.response.write(TRENDING_STREAMS_HTML)
+    logging.info("Exiting TredningStreams handler")
 
 class TrendingStreamsHandler(webapp.RequestHandler):
   def post(self):
@@ -1032,7 +1053,7 @@ application = webapp2.WSGIApplication([
     ('/MgmtPage', MgmtPage),
     ('/CreatePage', CreatePage),
     ('/ViewPage', ViewPage),
-    ('/SearchPage', SearchStreams),
+    ('/SearchPage', SearchPage),
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
     ('/ViewAllStreams', ViewAllStreams),
