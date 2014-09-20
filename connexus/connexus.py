@@ -775,6 +775,10 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
+  def convertStreamObjToList(self, streamObj):
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':streamObj.imagelist}
+    return streamList
+
   def post(self):
     data = json.loads(self.request.body)
     logging.info('this is what Im looking for: ' + str(data))
@@ -782,19 +786,27 @@ class SearchStreams(webapp2.RequestHandler):
     streamFilterList = data['streamname']
     logging.info('Stream filter: ' + str(streamFilterList)) 
 
+    #get all streams
+    listOfStreams = list()
+
+    logging.info("Query to get all the streams")
+    allstreams_query = Stream.query().order(Stream.creationdate)
+    listOfStreams = allstreams_query.fetch()
+    logging.info('Query for all streams returned:' + str(listOfStreams))
+
     streamFilter = streamFilterList[0]
     
     searchResultList = list()
-    for streamItem in allstreamsforsort:
-      if streamFilter in streamItem['streamname']:
-        searchResultList.append(streamItem)
+    for streamItem in listOfStreams:
+      if streamFilter in streamItem.streamname:
+        searchResultList.append(self.convertStreamObjToList(streamItem))
         #logging.info('Stream found with name match: ' + str(streamItem))
 
-    for streamItem in allstreamsforsort:
-      tagList = streamItem['taglist']
+    for streamItem in listOfStreams:
+      tagList = streamItem.taglist
       for tag in tagList:
         if streamFilter in tag:
-          searchResultList.append(streamItem)
+          searchResultList.append(self.convertStreamObjToList(streamItem))
           #logging.info('Stream found with tag match: ' + str(streamItem))
 
     logging.info("SearchResultList: " + str(searchResultList))
