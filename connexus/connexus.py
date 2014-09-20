@@ -724,7 +724,7 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
-  def post(self):
+  def get(self):
     data = json.loads(self.request.body)
     logging.info('this is what Im looking for: ' + str(data))
      
@@ -751,21 +751,15 @@ class SearchStreams(webapp2.RequestHandler):
     result = json.dumps(searchResultList)
     #payload = {'errorcode':1}
     #result = json.dumps(payload)
+    self.response.write('<html><body>')
+    self.response.write('Allstreamsforsort: ' + str(result))
+    self.response.write('</body></html>')
     self.response.write(result)
 
 class HandleMgmtForm(webapp2.RequestHandler):
   def post(self):
     #login = cgi.escape(self.request.get(''))
     logging.info("Management form data: " + str(self.request))
-    #referer = self.request.environ['HTTP_REFERER']
-    #logging.info("Referer: " + str(referer))
-    #parsedUrl = urlparse(str(referer))
-    #logging.info("Parsed Url: " + str(parsedUrl))
-    #if parsedUrl.path == '/TrendingPage':
-     # cronRateValue = self.request.get('cronRate')
-     # logging.info("CronRate is " + cronRateValue)
-     # redirectStr = '/cronSettings')
-     # self.redirect(redirectStr)
 
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
@@ -959,7 +953,7 @@ application = webapp2.WSGIApplication([
     ('/MgmtPage', MgmtPage),
     ('/CreatePage', CreatePage),
     ('/ViewPage', ViewPage),
-    ('/SearchPage', SearchPage),
+    ('/SearchPage', SearchStreams),
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
     ('/ViewAllStreams', ViewAllStreams),
