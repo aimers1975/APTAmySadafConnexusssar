@@ -775,6 +775,10 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
+  def convertStreamObjToList(self, streamObj):
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':streamObj.imagelist}
+    return streamList
+
   def post(self):
     data = json.loads(self.request.body)
     logging.info('this is what Im looking for: ' + str(data))
@@ -795,16 +799,14 @@ class SearchStreams(webapp2.RequestHandler):
     searchResultList = list()
     for streamItem in listOfStreams:
       if streamFilter in streamItem.streamname:
-        currentStream = {'streamname':streamItem.streamname, 'creationdate':streamItem.creationdate, 'viewdatelist':streamItem.viewdatelist, 'viewdatelistlength':streamItem.viewdatelistlength, 'owner':streamItem.owner, 'subscribers':streamItem.streamsubscribers, 'taglist': streamItem.taglist, 'coverurl':streamItem.coverurl, 'commentlist':streamItem.commentlist, 'imagelist':streamItem.imagelist}
-        searchResultList.append(currentStream)
+        searchResultList.append(self.convertStreamObjToList(streamItem))
         #logging.info('Stream found with name match: ' + str(streamItem))
 
     for streamItem in listOfStreams:
       tagList = streamItem.taglist
       for tag in tagList:
         if streamFilter in tag:
-          currentStream = {'streamname':streamItem.streamname, 'creationdate':streamItem.creationdate, 'viewdatelist':streamItem.viewdatelist, 'viewdatelistlength':streamItem.viewdatelistlength, 'owner':streamItem.owner, 'subscribers':streamItem.streamsubscribers, 'taglist': streamItem.taglist, 'coverurl':streamItem.coverurl, 'commentlist':streamItem.commentlist, 'imagelist':streamItem.imagelist}
-          searchResultList.append(currentStream)
+          searchResultList.append(self.convertStreamObjToList(streamItem))
           #logging.info('Stream found with tag match: ' + str(streamItem))
 
     logging.info("SearchResultList: " + str(searchResultList))
