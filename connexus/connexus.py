@@ -867,7 +867,6 @@ class UnsubscribeStreams(webapp2.RequestHandler):
 
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
-    self.response.write('<html><body>TrendingStreamsHandler...</body></html>')
     data = json.loads(self.request.body)
     logging.info('No json data for this call')
     logging.info('Get all streams by most viewed')
