@@ -27,8 +27,6 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
-allstreamsforsort = list()
-allstreamsbycreationtime = list()
 ds_key = ndb.Key('connexusssar', 'connexusssar')
 
 cronrate = 'five'
@@ -263,6 +261,13 @@ class MainPage(webapp2.RequestHandler):
     else:
       self.redirect(users.create_login_url(self.request.uri))
 
+class Image(ndb.Model):
+  imageid = ndb.StringProperty()
+  imagefilename = ndb.StringProperty()
+  comments = ndb.StringProperty()
+  imagefileurl = ndb.StringProperty()
+  imagecreationdate = ndb.StringProperty()
+
 class Stream(ndb.Model):
   streamname = ndb.StringProperty(indexed=True)
   creationdate = ndb.StringProperty()
@@ -273,20 +278,29 @@ class Stream(ndb.Model):
   taglist = ndb.StringProperty(indexed=False,repeated=True)
   coverurl = ndb.StringProperty(indexed=False)
   commentlist = ndb.StringProperty(indexed=False,repeated=True) 
-  coverurl = ndb.StringProperty(indexed=False)
-  imagelist = ndb.StringProperty(indexed=False,repeated=True)
+  imagelist = ndb.StructuredProperty(Image,repeated=True)
 
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
     user = str(users.get_current_user())
     logging.info("Current user is: " + user)
-    mydata = json.dumps({'userid':'amy_hindman@yahoo.com'})
+    mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
     result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
     logging.info('Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     streamsiown = resultobj['streamlist']
     streamsisubscribe = resultobj['subscribedstreamlist']
+    #get the list of streamnames I own:
+    for ownstreams in streamsiown:
+      name = ownstreams['streamname']
+      logging.info("This stream name is: " + str(name))
+      imagelist = ownstreams['imagelist']
+      logging.info('This stream imagelist: ' + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist length' + str(numpics))
+      lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Creation date: " + lastnewpicdate)
     logging.info("Owned streams: " + str(streamsiown))
     logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
@@ -294,6 +308,8 @@ class MgmtPage(webapp2.RequestHandler):
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
+
+
 
 class CreatePage(webapp2.RequestHandler):
   def get(self):
@@ -461,7 +477,7 @@ class CreateStream(webapp2.RequestHandler):
         stream.owner = owner
 
         streamsubscribers = data['subscribers']
-        stream.subscribers = streamsubscribers
+        stream.streamsubscribers = streamsubscribers
         logging.info('\nstreamsubscribers: ' + str(streamsubscribers))
 
         taglist = data ['tags']
@@ -479,13 +495,8 @@ class CreateStream(webapp2.RequestHandler):
         imagelist = list()
         stream.imagelist = imagelist
         logging.info('\nImagelist: ' + str(imagelist))
-        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'imagelist':imagelist}
-
+        
         stream.put()
-        allstreamsforsort.append(thisstream)
-        allstreamsbycreationtime.append(thisstream)
-          
-        logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort)) 
         payload = {'errorcode':0}
     except:
       payload = {'errorcode':3}
@@ -514,19 +525,44 @@ class ManageStream(webapp2.RequestHandler):
     #TODO: loop through all streams for sort and find all streams for this owner
     thisuserstreams = list()
     thisusersubscriptionlist = list()
-    logging.info('Allstreamsforsort is: ' + str(allstreamsforsort))
-    for stream in allstreamsforsort:
-      if stream['owner'] == userid:
-        thisuserstreams.append(stream)
-      try:
-        logging.info("Checking to see if subscriberlist has id: " + str(userid))
-        logging.info("Subscriberlist: " + str(stream['subscriberlist']))
-        stream['subscriberlist'].index(userid) 
-        logging.info('appending stream to subscribed streams')
-        thisusersubscriptionlist.append(stream)
-        logging.info('the stream was appended.')
-      except:
-        logging.info("Stream " + str(stream) + ' does not have subsciber ' + str(userid))
+    logging.info("Starting fetch streams owned by for: " + str(userid))
+    stream_query = Stream.query(Stream.owner == userid)
+    rawuserstreams = stream_query.fetch()
+
+    for thisstream in rawuserstreams:
+      thisimagelist = thisstream.imagelist
+      logging.info('This imagelist from db: ' + str(thisimagelist))
+      newimagelist = list()
+      for image in thisimagelist:
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
+        logging.info('Build image object from db: ' + str(currentimage))
+        newimagelist.append(currentimage)
+      currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
+      logging.info('New current stream from db: ' + str(currentstream))
+      thisuserstreams.append(currentstream)
+
+    logging.info("Starting fetch streams subscribed to by: " + str(userid))
+    stream_query = Stream.query()
+    allstreams = stream_query.fetch()
+    rawusersubscriptionlist = list()
+    for thisstream in allstreams:
+      subusers = thisstream.streamsubscribers
+      logging.info("Stream: " + str(thisstream) + " has subscribers: " + str(subusers))
+      if subusers.count(userid) > 0:
+        rawusersubscriptionlist.append(thisstream)
+
+    for thisstream in rawusersubscriptionlist:
+      thisimagelist = thisstream.imagelist
+      logging.info('This imagelist from db: ' + str(thisimagelist))
+      newimagelist = list()
+      for image in thisimagelist:
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
+        logging.info('Build image object from db: ' + str(currentimage))
+        newimagelist.append(currentimage)
+      currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
+      logging.info('New current stream from db: ' + str(currentstream))
+      thisusersubscriptionlist.append(currentstream)
+
     logging.info("This users streams: " + str(thisuserstreams))
     logging.info('subscriptionlist: ' + str(thisusersubscriptionlist))
     
@@ -541,57 +577,54 @@ class ViewStream(webapp2.RequestHandler):
     streamname = data['streamname']
     pagerange = data['pagerange']
     try:
-      currentstream = {}
-      for stream in allstreamsforsort:
-        if stream['streamname'] == streamname:
-          currentstream = stream
+      logging.info('Check if stream exists')
+      present_query = Stream.query(Stream.streamname == streamname)
+      existsstream = present_query.get()
+      logging.info('Query returned: ' + str(existsstream))
 
-      logging.info('The stream retrieved for viewing is: ' + str(currentstream))
-      index = allstreamsforsort.index(currentstream)
-      logging.info('Stream: ' + str(streamname) + ' found at index: ' + str(index))
       removelist = list()
-      logging.info("Viewdatelist length: " + str(len(allstreamsforsort[index]['viewdatelist'])))
-      for date in allstreamsforsort[index]['viewdatelist']:
+
+      #get viewlist for this stream and remove stale values
+      existsstreamdatelist = existsstream.viewdatelist
+      logging.info('view date list from datastore is: ' + str(existsstreamdatelist))
+
+      for date in existsstreamdatelist:
         logging.info("Calling older than hour with input: " + str(date))
         if(olderthanhour(date)):
           logging.info("Removing item.")
           removelist.append(date)
       for date in removelist:    
-        allstreamsforsort[index]['viewdatelist'].remove(date)
-      allstreamsforsort[index]['viewdatelist'].append(str(datetime.now()))
-      logging.info("Viewdatelist length: " + str(len(allstreamsforsort[index]['viewdatelist'])))
-      allstreamsforsort.remove(currentstream)
-      logging.info("removed allstream for sort index")
-      if len(allstreamsforsort) > 0:
-        for x in range(0,len(allstreamsforsort)):
-          logging.info("Starting for loop x=" + str(x))
-          if len(currentstream['viewdatelist']) < len(allstreamsforsort[x]['viewdatelist']):
-            if (x == (len(allstreamsforsort)-1)):
-              logging.info('End of list, insert at end')
-              allstreamsforsort.insert(len(allstreamsforsort),currentstream)
-              break
-            else:
-              logging.info('keep going')
-          else:
-            logging.info('found spot at: ' + str(x))
-            allstreamsforsort.insert(x, currentstream)
-            break
-      else:
-        logging.info("Allstreamsforsort length is 0")
-        allstreamsforsort.append(currentstream)
-      logging.info(str(allstreamsforsort))
-      images = currentstream['imagelist']
-      logging.info('Images list: ' + str(images))
+        existsstreamdatelist.remove(date)
+        try:
+          existsstreamdatelist.remove(date)
+        except:
+          logging.info('Date not found in datastore list: ' + str(date))
+
+      logging.info('Past for loops for datelist')
+
+      existsstreamdatelist.append(str(datetime.now()))
+      existsstream.viewdatelistlength = len(existsstreamdatelist)
+      existsstream.viewdatelist = existsstreamdatelist
+      logging.info('existsstreamdatelist: ' + str(existsstreamdatelist))
+      existsstream.put()
+ 
+      images_ds = existsstream.imagelist
+      logging.info('Images list ds: ' + str(images_ds))
+
+      #TODO - There is a bug here, if the range sent is too long we probably want to send
+      # as many as we can, and right now we send nothing
       start = int(pagerange[0])
       logging.info('Pagerange start: ' + str(start))
       end = int(pagerange[1])
       logging.info('Pagerange end: ' + str(end))
-      logging.info('Length of images is: ' + str(len(images)))
-      if ((start > -1) and ((end+1) <= len(images))):
-        images = images[start:end+1]
+      logging.info('Length of images_ds is: ' + str(len(images_ds)))
+      if ((start > -1) and ((end+1) <= len(images_ds))):
+        images_ds = images_ds[start:end+1]
+        logging.info('Images_ds: ' + str(images_ds))
         urls = list()
-        for image in images:
-          urls.append(image['imageurl'])
+        for image in images_ds:
+          logging.info("This image is: " + str(image) + ' and imageurl is: ' + str(image.imagefileurl))
+          urls.append(image.imagefileurl)
         payload = {'picurls': urls, 'pagerange':pagerange}
       else:
         payload = {'picurls':list(), 'pagerange':list()}
@@ -656,9 +689,15 @@ class UploadImage(webapp2.RequestHandler):
       logging.info('No json data with this request')
     encodedimage = data['uploadimage']
     streamname = data['streamname']
+    logging.info('Check if stream exists')
+    present_query = Stream.query(Stream.streamname == streamname)
+    existsstream = present_query.get()
+    logging.info('Query returned: ' + str(existsstream))
+
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
+    creationdate = str(datetime.now())
     #decode the image
     imagefile = encodedimage.decode('base64')
     #create an ID for the image - may not need this....
@@ -668,21 +707,28 @@ class UploadImage(webapp2.RequestHandler):
     bucket = '/' + bucket_name
     filename = bucket + '/' + streamname + '/' + imageid
     try:
-      create_file(filename,imagefile,contenttype)
-      logging.info('Created imagefile')
-      self.response.write('\n\n')
-      #Once image successfully created, add Image to the image list in stream
-      imagefileurl = "http://storage.googleapis.com" + str(filename)
-      thisimage = {'imageid':imageid,'filename':imagefilename,'comments':comments,'imageurl':imagefileurl}
-      logging.info('Image object created: ' + str(thisimage))
-      logging.info("starting stream search loop")
+      if not existsstream == None:
+        create_file(filename,imagefile,contenttype)
+        myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+        logging.info('Created imagefile')
+        imagefileurl = "http://storage.googleapis.com" + str(filename)
+        myimage.imageid = imageid
+        myimage.imagefilename = imagefilename
+        myimage.comments = comments
+        myimage.imagefileurl = imagefileurl
+        myimage.imagecreationdate = creationdate
+        myimage.put()
+        thisimagelist = existsstream.imagelist
+        thisimagelist.append(myimage)
+        existsstream.imagelist = thisimagelist
+        existsstream.put()
+        logging.info("Thisimagelist: " + str(thisimagelist))
+        payload = json.dumps({"errorcode":0})
+      else:
+        payload = json.dumps({'errorcode':7})
+        logging.info('Stream doesnt exist')
 
-      for stream in allstreamsforsort:
-        if stream['streamname'] == streamname:
-          logging.info("Found stream, appending image to imagelist")
-          stream['imagelist'].append(thisimage)
-      logging.info("Allstreamsforsort: " + str(allstreamsforsort))
-      payload = json.dumps({"errorcode":0})
+
       #self.read_file(filename)
       #self.response.write('\n\n')
       #self.stat_file(filename)
@@ -711,12 +757,17 @@ class ViewAllStreams(webapp2.RequestHandler):
     logging.info('View all streams has no json input.')
     totalstreams = list()
     coverurls = list()
-    for stream in allstreamsbycreationtime:
-        logging.info("This stream is: " + str(stream))
-        totalstreams.append(stream['streamname'])
-        coverurls.append(stream['coverurl'])
-    for stream in allstreamsforsort: 
-      stream['viewdatelist'].append(str(datetime.now()))
+
+    logging.info('Check if stream exists')
+    allstream_query = Stream.query().order(Stream.creationdate)
+    allstreamsbycreation = allstream_query.fetch()
+    logging.info('Query returned: ' + str(allstreamsbycreation))
+
+    for stream in allstreamsbycreation:
+      logging.info("This stream is: " + str(stream))
+      totalstreams.append(stream.streamname)
+      coverurls.append(stream.coverurl)
+
     logging.info("Total streams: " + str(totalstreams))
     logging.info("Coverurls: " + str(coverurls))
     payload = {'streamlist':totalstreams,'coverurls':coverurls}
@@ -724,26 +775,38 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
-  def get(self):
+  def convertStreamObjToList(self, streamObj):
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':streamObj.imagelist}
+    return streamList
+
+  def post(self):
     data = json.loads(self.request.body)
     logging.info('this is what Im looking for: ' + str(data))
      
     streamFilterList = data['streamname']
     logging.info('Stream filter: ' + str(streamFilterList)) 
 
+    #get all streams
+    listOfStreams = list()
+
+    logging.info("Query to get all the streams")
+    allstreams_query = Stream.query().order(Stream.creationdate)
+    listOfStreams = allstreams_query.fetch()
+    logging.info('Query for all streams returned:' + str(listOfStreams))
+
     streamFilter = streamFilterList[0]
     
     searchResultList = list()
-    for streamItem in allstreamsforsort:
-      if streamFilter in streamItem['streamname']:
-        searchResultList.append(streamItem)
+    for streamItem in listOfStreams:
+      if streamFilter in streamItem.streamname:
+        searchResultList.append(self.convertStreamObjToList(streamItem))
         #logging.info('Stream found with name match: ' + str(streamItem))
 
-    for streamItem in allstreamsforsort:
-      tagList = streamItem['taglist']
+    for streamItem in listOfStreams:
+      tagList = streamItem.taglist
       for tag in tagList:
         if streamFilter in tag:
-          searchResultList.append(streamItem)
+          searchResultList.append(self.convertStreamObjToList(streamItem))
           #logging.info('Stream found with tag match: ' + str(streamItem))
 
     logging.info("SearchResultList: " + str(searchResultList))
@@ -769,9 +832,9 @@ class DeleteStreams(webapp2.RequestHandler):
       #will take a list of streams
       deletestreams = data['streamnamestodelete']
       #iterate through list of streams input
-      payload = {'errorcode':100}
       stream_keys = list()
       logging.info('Before for loop')
+      #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we have time
       for deletestream in deletestreams:
         logging.info("Starting fetch key for: " + str(deletestream))
         stream_query = Stream.query(Stream.streamname == deletestream)
@@ -780,35 +843,26 @@ class DeleteStreams(webapp2.RequestHandler):
         logging.info("past query")
         logging.info("My key is: " + str(mydeletestream.key))
         stream_keys.append(mydeletestream.key)
-        logging.info("Deleting streamname: " + str(deletestream))
-        index = -1
-        for stream in allstreamsforsort:
-          if stream['streamname'] == deletestream:
-            logging.info('Found stream to delete: ' + str(stream))
-            index = allstreamsforsort.index(stream)
-            logging.info('The index found was: ' + str(index))
-            imageobjects = allstreamsforsort[index]['imagelist']
-            imagestodelete = list()
-            for imageurl in imageobjects:
-              logging.info("Image url object: " + str(imageurl))
-              thisurl = imageurl['imageurl']
-              logging.info('This url: ' + str(thisurl))
-              parturl = thisurl.split('http://storage.googleapis.com')[1]
-              logging.info('Parturl: ' + str(parturl))
-              imagestodelete.append(parturl)
-              logging.info('Deleting: ' + str(imagestodelete))
-            delete_images(imagestodelete)
-            logging.info('Delete stream: ' + str(stream))
-            allstreamsforsort.remove(stream)
-            allstreamsbycreationtime.remove(stream)
-            payload = {'errorcode':0}
-      logging.info('Trying to really delete from db.')
+        logging.info("Deleting stream: " + str(mydeletestream))
+        rawimagestodelete = mydeletestream.imagelist
+        logging.info("Raw images to delete: " + str(rawimagestodelete))
+        imagestodelete = list()
+        for thisimage in rawimagestodelete:
+          thisurl = thisimage.imagefileurl
+          logging.info("Imageurl object: " + str(thisurl))
+          parturl = thisurl.split('http://storage.googleapis.com')[1]
+          logging.info('Parturl: ' + str(parturl))
+          imagestodelete.append(parturl)
+        logging.info('Deleting: ' + str(imagestodelete))
+        delete_images(imagestodelete)
+      logging.info('Trying to really delete from db: ' + str(stream_keys))
       ndb.delete_multi(stream_keys)
       logging.info('deleted from db')
-      logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort))
+      payload = {'errorcode':0}
+      result = json.dumps(payload)
     except:
       payload = {'errorcode':100}
-    result = json.dumps(payload)
+      result = json.dumps(payload)
     self.response.write(result)
 
 class UnsubscribeStreams(webapp2.RequestHandler):
@@ -817,20 +871,45 @@ class UnsubscribeStreams(webapp2.RequestHandler):
     logging.info('Json data for this call: ' + str(data))
     user = data['unsubuser']
     streamname = data['streamname']
-    for stream in allstreamsforsort:
-      if stream['streamname'] == streamname:
-        stream['subscriberlist'].remove(user)
-    logging.info('Allstreamsforsort is now ' + str(allstreamsforsort))
-    payload = {'errorcode':0}
+    logging.info('Check if stream exists')
+    present_query = Stream.query(Stream.streamname == streamname)
+    existsstream = present_query.get()
+    logging.info('Query returned: ' + str(existsstream))
+    userlist = existsstream.streamsubscribers
+    payload = {}
+    try:
+      userlist.remove(user)
+      logging.info("updated subscriberlist is: " + str(userlist))
+      existsstream.streamsubscribers = userlist
+      existsstream.put()
+      payload = {'errorcode':0}
+    except:
+      payload = {'errorcode':8}
+      logging.info('Unsubscribe user does not exist.')
     result = json.dumps(payload)
     self.response.write(result)
 
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
-    self.response.write('<html><body>TrendingStreamsHandler...</body></html>')
     data = json.loads(self.request.body)
     logging.info('No json data for this call')
-    payload = {'mostviewedstreams':allstreamsforsort}
+    logging.info('Get all streams by most viewed')
+    allstream_query = Stream.query().order(-Stream.viewdatelistlength)
+    allstreamsbyviews = allstream_query.fetch()
+    newmostviewedlist = list()
+    for stream in allstreamsbyviews:
+      thisimagelist = stream.imagelist
+      logging.info('This imagelist from db: ' + str(thisimagelist))
+      newimagelist = list()
+      for image in thisimagelist:
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
+        logging.info('Build image object from db: ' + str(currentimage))
+        newimagelist.append(currentimage)
+      currentstream = {'streamname':stream.streamname,'creationdate':stream.creationdate,'viewdatelist':stream.viewdatelist,'viewdatelistlength':stream.viewdatelistlength,'owner':stream.owner,'subscribers':stream.streamsubscribers,'taglist':stream.taglist,'coverurl':stream.coverurl,'commentlist':stream.commentlist,'coverurl':stream.coverurl,'imagelist':newimagelist}
+      logging.info('New current stream from db: ' + str(currentstream)) 
+      newmostviewedlist.append(currentstream)
+    logging.info('Returning most viewed list: ' + str(newmostviewedlist))
+    payload = {'mostviewedstreams':newmostviewedlist}
     result = json.dumps(payload)
     self.response.write(result)
 

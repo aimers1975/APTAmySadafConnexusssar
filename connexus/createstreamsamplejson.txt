@@ -1,0 +1,1 @@
+{"commentlist": [], "creationdate": "2014-09-20 09:11:59.458000", "subscribers": ["amy_hindman@yahoo.com", "aimers1975", "bob@gmail.com"], "tags": ["#testtag"], "imagelist": [], "streamname": "amy1", "coverurl": "www.google.com", "currentuser": "amy_hindman@yahoo.com", "viewdatelist": []}
