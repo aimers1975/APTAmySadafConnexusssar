@@ -14,6 +14,7 @@ import logging
 import json
 import cgi
 import urllib
+from urlparse import urlparse
 import re
 import os
 import uuid
@@ -30,7 +31,7 @@ ds_key = ndb.Key('connexusssar', 'connexusssar')
 
 cronrate = 'five'
 myimages = list()
-cron_rate = 5
+cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
@@ -45,7 +46,7 @@ MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</titl
 
 HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div>            
-<body><head><h1>Connex.us</h1></head><h3>
+<body><head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Style Test</title>
@@ -138,17 +139,47 @@ EMAIL_HTML = """\
 </html>
 """
 
+TRENDING_PAGE_STYLE = """\
+<style>
+#section {
+    width:350px;
+    float:left;
+    padding:10px;    
+}
+#footer {
+    background-color:black;
+    color:white;
+    clear:both;
+    text-align:center;
+   padding:5px;    
+}
+</style>
+"""
+
 TRENDING_STREAMS_HTML = """\
-<html>
-  <body>
-    <H2>Top 3 Trending Streams</H2>
-    <form action="/cronSettings" method="post">
-      <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
-      <input type="checkbox" name="cronRate" value="Ten"> Every 10 minutes
-      <input type="submit" value="Update Rate">
-    </form>
-  </body>
-</html>
+<div id="section">
+  <H2>Top 3 Trending Streams</H2>
+  <form action="/GetMostViewedStreams" method="post">
+    <ul id="list">
+      <li>Stream 1</li>  
+      <li>Stream 2</li>
+      <li>Stream 3</li>
+    </ul>
+  </form>
+</div>
+"""
+
+TRENDING_REPORT_HTML = """\
+<div id="aside">
+  <form action="/cronSettings" method="post">
+    <input type="checkbox" name="cronRate" value="No"> No reports<br>
+    <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
+    <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
+    <input type="checkbox" name="cronRate" value="Day"> Every day<br>
+    <p> Email Trending Report </p>
+    <input type="submit" value="Update Rate">
+  </form>
+</div>
 """
 
 def olderthanhour(checktimestring):
@@ -235,6 +266,7 @@ class Image(ndb.Model):
   imagefilename = ndb.StringProperty()
   comments = ndb.StringProperty()
   imagefileurl = ndb.StringProperty()
+  imagecreationdate = ndb.StringProperty()
 
 class Stream(ndb.Model):
   streamname = ndb.StringProperty(indexed=True)
@@ -246,20 +278,29 @@ class Stream(ndb.Model):
   taglist = ndb.StringProperty(indexed=False,repeated=True)
   coverurl = ndb.StringProperty(indexed=False)
   commentlist = ndb.StringProperty(indexed=False,repeated=True) 
-  coverurl = ndb.StringProperty(indexed=False)
   imagelist = ndb.StructuredProperty(Image,repeated=True)
 
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
     user = str(users.get_current_user())
     logging.info("Current user is: " + user)
-    mydata = json.dumps({'userid':'amy_hindman@yahoo.com'})
+    mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
     result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
     logging.info('Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     streamsiown = resultobj['streamlist']
     streamsisubscribe = resultobj['subscribedstreamlist']
+    #get the list of streamnames I own:
+    for ownstreams in streamsiown:
+      name = ownstreams['streamname']
+      logging.info("This stream name is: " + str(name))
+      imagelist = ownstreams['imagelist']
+      logging.info('This stream imagelist: ' + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist length' + str(numpics))
+      lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Creation date: " + lastnewpicdate)
     logging.info("Owned streams: " + str(streamsiown))
     logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
@@ -267,6 +308,8 @@ class MgmtPage(webapp2.RequestHandler):
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
+
+
 
 class CreatePage(webapp2.RequestHandler):
   def get(self):
@@ -285,7 +328,8 @@ class SearchPage(webapp2.RequestHandler):
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Trending page coming soon</body></html>"
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + TRENDING_STREAMS_HTML + TRENDING_REPORT_HTML + "</body></html>"
+    #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
 class SocialPage(webapp2.RequestHandler):
@@ -451,8 +495,7 @@ class CreateStream(webapp2.RequestHandler):
         imagelist = list()
         stream.imagelist = imagelist
         logging.info('\nImagelist: ' + str(imagelist))
-        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'imagelist':imagelist}
-
+        
         stream.put()
         payload = {'errorcode':0}
     except:
@@ -491,7 +534,7 @@ class ManageStream(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
@@ -513,7 +556,7 @@ class ManageStream(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
@@ -568,6 +611,8 @@ class ViewStream(webapp2.RequestHandler):
       images_ds = existsstream.imagelist
       logging.info('Images list ds: ' + str(images_ds))
 
+      #TODO - There is a bug here, if the range sent is too long we probably want to send
+      # as many as we can, and right now we send nothing
       start = int(pagerange[0])
       logging.info('Pagerange start: ' + str(start))
       end = int(pagerange[1])
@@ -652,6 +697,7 @@ class UploadImage(webapp2.RequestHandler):
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
+    creationdate = str(datetime.now())
     #decode the image
     imagefile = encodedimage.decode('base64')
     #create an ID for the image - may not need this....
@@ -670,6 +716,7 @@ class UploadImage(webapp2.RequestHandler):
         myimage.imagefilename = imagefilename
         myimage.comments = comments
         myimage.imagefileurl = imagefileurl
+        myimage.imagecreationdate = creationdate
         myimage.put()
         thisimagelist = existsstream.imagelist
         thisimagelist.append(myimage)
@@ -771,6 +818,15 @@ class HandleMgmtForm(webapp2.RequestHandler):
   def post(self):
     #login = cgi.escape(self.request.get(''))
     logging.info("Management form data: " + str(self.request))
+    #referer = self.request.environ['HTTP_REFERER']
+    #logging.info("Referer: " + str(referer))
+    #parsedUrl = urlparse(str(referer))
+    #logging.info("Parsed Url: " + str(parsedUrl))
+    #if parsedUrl.path == '/TrendingPage':
+     # cronRateValue = self.request.get('cronRate')
+     # logging.info("CronRate is " + cronRateValue)
+     # redirectStr = '/cronSettings')
+     # self.redirect(redirectStr)
 
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
@@ -782,6 +838,7 @@ class DeleteStreams(webapp2.RequestHandler):
       #iterate through list of streams input
       stream_keys = list()
       logging.info('Before for loop')
+      #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we have time
       for deletestream in deletestreams:
         logging.info("Starting fetch key for: " + str(deletestream))
         stream_query = Stream.query(Stream.streamname == deletestream)
@@ -849,7 +906,7 @@ class GetMostViewedStreams(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':stream.streamname,'creationdate':stream.creationdate,'viewdatelist':stream.viewdatelist,'viewdatelistlength':stream.viewdatelistlength,'owner':stream.owner,'subscribers':stream.streamsubscribers,'taglist':stream.taglist,'coverurl':stream.coverurl,'commentlist':stream.commentlist,'coverurl':stream.coverurl,'imagelist':newimagelist}
@@ -908,29 +965,19 @@ class TrendingStreamsHandler(webapp.RequestHandler):
   def post(self):
     global cron_rate
     checkboxValue = self.request.get('cronRate')
-    self.response.write('<html><body>Cron Rate is: <pre>')
-    self.response.write(cgi.escape(self.request.get('cronRate')))
-    self.response.write('</pre></body></html>')
 
     logging.info('Cron rate selected: ' + str(checkboxValue))
 
-    five = 'Five'
     if checkboxValue == 'Five':
-      logging.info("Found checkbox five.")
-      self.response.write('<html><body>Cron Rate is Five')
-      self.response.write('</body></html>')
       cron_rate = 5
-      #cronjob = '/cron/fivemins'
-      #logging.info("Redirecing to cronjob fivemin.")
-      #self.redirect(cronjob)
-    else:
-      logging.info("Found checkbox 10.")
-      self.response.write('<html><body>Cron Rate is Ten')
-      self.response.write('</body></html>')
-      cron_rate = 10
-      #cronjob = '/cron/tenmins'
-      #logging.info("Redirecing to cronjob fivemin.")
-      #self.redirect(cronjob)
+    elif checkboxValue == 'Hour': 
+      cron_rate = 60
+    elif checkboxValue == 'Day':
+      cron_rate = 1440
+    elif checkboxValue == 'No':
+      cron_rate = -1
+    logging.info("Cron Rate is now %d." % cron_rate)
+    self.redirect('/TrendingPage')
 
 class CronJobHandler(webapp.RequestHandler):
   def sendTrendEmail(self, content):
@@ -968,6 +1015,9 @@ class CronJobHandler(webapp.RequestHandler):
       self.sendTrendEmail(content)
       last_run_time = datetime.now()
       logging.info("Email send after %d mins" % elapsedMins)
+    elif cron_rate == -1:
+      last_run_time = datetime.now()
+      logging.info("Trending Emails are turned off.")
     else:
       logging.info("Elapsed mins: %d" % elapsedMins)
 
