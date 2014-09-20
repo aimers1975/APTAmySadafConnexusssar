@@ -138,13 +138,15 @@ TRENDING_PAGE_STYLE = """\
 TRENDING_STREAMS_HTML = """\
 <div id="section">
   <H2>Top 3 Trending Streams</H2>
-  <form action="/GetMostViewedStreams" method="post">
-    <ul id="list">
-      <li>Stream 1</li>  
-      <li>Stream 2</li>
-      <li>Stream 3</li>
-    </ul>
-  </form>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table>
+%s
+</table>
 </div>
 """
 
@@ -172,8 +174,6 @@ SEARCH_STREAMS_HTML = """\
 
 SEARCH_RESULT_HTML = """\
 <div id="article">
-  <form>
-  </form>
 <div>
 """
 
@@ -214,7 +214,18 @@ def generatestreamssubscribed(updatelist):
   for x in range(0,length):
     htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
     htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
+  logging.info('htmlstringfinal : ' + htmlstringfinal)
   return htmlstringfinal  
+
+def generatetrendingstreams(trendinglist):
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  htmlstringfinal = ""
+  length = 3
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + trendinglist['streamnames'][x] + END_ITEM_HTML 
+  return htmlstringfinal
 
 def addcoverurl(coverurl,streamname):
   logging.info('In add coverurl for ' + str(streamname) + ' at ' + coverurl)
@@ -374,11 +385,40 @@ class ViewPage(webapp2.RequestHandler):
 
 class SearchPage(webapp2.RequestHandler):
   def get(self):
+    #Retrieve top 3 trending streams
+    url = 'http://' + AP_ID_GLOBAL + '/SearchStreams'
+    params = json.dumps({})
+    logging.info('URL for SearchStreams is : ' + str(url))
+    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+    logging.info('SearchStreams Result is: ' + str(result.content))
+    resultobj = json.loads(result.content)
+    searchedStreams = resultobj['mostviewedstreams']
+    logging.info('SearchStreams from service: ' + str(searchedStreams))
+
+    #get list of top three streams
+    searchedStreamsResult = {'streamnames':list(),'imagenums':list()}
+    for tstream in searchedStreamsResult:
+      name = tstream['streamname']
+      logging.info("Trending stream : " + str(name))
+      imagelist = tstream['imagelist']
+      logging.info("Trending stream image list : " + str(imagelist))
+      if len(imagelist) == 0:
+        lastnewpicdate = 'N/A'
+      else:
+        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Treading stream creation date : " + lastnewpicdate)
+
+      searchedStreamsResult['streamnames'].append(name)
+      searchedStreamsResult['dates'].append(lastnewpicdate)
+      searchedStreamsResult['imagenums'].append(numpics)
+    logging.info('Top Three Trending Streams :' + str(searchedStreamsResult))
+    trendingStreamHtml = generatetrendingstreams(searchedStreamsResult)
     fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + SEARCH_RESULT_HTML + "</body></html>"
     self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
+    #Retrieve top 3 trending streams
     url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
     params = json.dumps({})
     logging.info('URL for GetMostViewedStreams is : ' + str(url))
@@ -386,8 +426,32 @@ class TrendingPage(webapp2.RequestHandler):
     logging.info('GetMostViewedStreams Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     trendingStreams = resultobj['mostviewedstreams']
-    logging.info('TrendingStreams: ' + str(trendingStreams))
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + TRENDING_STREAMS_HTML + TRENDING_REPORT_HTML + "</body></html>"
+    logging.info('TrendingStreams from service: ' + str(trendingStreams))
+
+    #get list of top three streams
+    trendingStreamsResult = {'streamnames':list(),'imagenums':list()}
+    for tstream in trendingStreams:
+      logging.info('tstream : ' + str(tstream))
+      name = tstream['streamname']
+      logging.info("Trending stream : " + str(name))
+      imagelist = tstream['imagelist']
+      logging.info("Trending stream image list : " + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist: ' + str(numpics))
+      if len(imagelist) == 0:
+        lastnewpicdate = 'N/A'
+      else:
+        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Treading stream creation date : " + lastnewpicdate)
+
+      trendingStreamsResult['streamnames'].append(name)
+      #trendingStreamsResult['dates'].append(lastnewpicdate)
+      trendingStreamsResult['imagenums'].append(numpics)
+    logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
+    trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
+    logging.info('Trending Stream table html :' + str(trendingStreamHtml))
+
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
     #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
