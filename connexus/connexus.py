@@ -277,14 +277,13 @@ class Stream(ndb.Model):
   taglist = ndb.StringProperty(indexed=False,repeated=True)
   coverurl = ndb.StringProperty(indexed=False)
   commentlist = ndb.StringProperty(indexed=False,repeated=True) 
-  coverurl = ndb.StringProperty(indexed=False)
   imagelist = ndb.StructuredProperty(Image,repeated=True)
 
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
     user = str(users.get_current_user())
     logging.info("Current user is: " + user)
-    mydata = json.dumps({'userid':'amy_hindman@yahoo.com'})
+    mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
     result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
     logging.info('Result is: ' + str(result.content))
@@ -483,8 +482,7 @@ class CreateStream(webapp2.RequestHandler):
         imagelist = list()
         stream.imagelist = imagelist
         logging.info('\nImagelist: ' + str(imagelist))
-        thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'imagelist':imagelist}
-
+        
         stream.put()
         payload = {'errorcode':0}
     except:
