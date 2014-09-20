@@ -27,8 +27,6 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
-allstreamsforsort = list()
-allstreamsbycreationtime = list()
 ds_key = ndb.Key('connexusssar', 'connexusssar')
 
 cronrate = 'five'
@@ -467,7 +465,7 @@ class CreateStream(webapp2.RequestHandler):
         stream.owner = owner
 
         streamsubscribers = data['subscribers']
-        stream.subscribers = streamsubscribers
+        stream.streamsubscribers = streamsubscribers
         logging.info('\nstreamsubscribers: ' + str(streamsubscribers))
 
         taglist = data ['tags']
@@ -488,10 +486,6 @@ class CreateStream(webapp2.RequestHandler):
         thisstream = {'streamname':streamname,'creationdate':creationdate,'viewdatelist':viewdatelist,'owner':owner,'subscriberlist':streamsubscribers,'taglist':taglist,'coverurl':coverurl,'commentlist':commentlist,'imagelist':imagelist}
 
         stream.put()
-        allstreamsforsort.append(thisstream)
-        allstreamsbycreationtime.append(thisstream)
-          
-        logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort)) 
         payload = {'errorcode':0}
     except:
       payload = {'errorcode':3}
@@ -520,19 +514,44 @@ class ManageStream(webapp2.RequestHandler):
     #TODO: loop through all streams for sort and find all streams for this owner
     thisuserstreams = list()
     thisusersubscriptionlist = list()
-    logging.info('Allstreamsforsort is: ' + str(allstreamsforsort))
-    for stream in allstreamsforsort:
-      if stream['owner'] == userid:
-        thisuserstreams.append(stream)
-      try:
-        logging.info("Checking to see if subscriberlist has id: " + str(userid))
-        logging.info("Subscriberlist: " + str(stream['subscriberlist']))
-        stream['subscriberlist'].index(userid) 
-        logging.info('appending stream to subscribed streams')
-        thisusersubscriptionlist.append(stream)
-        logging.info('the stream was appended.')
-      except:
-        logging.info("Stream " + str(stream) + ' does not have subsciber ' + str(userid))
+    logging.info("Starting fetch streams owned by for: " + str(userid))
+    stream_query = Stream.query(Stream.owner == userid)
+    rawuserstreams = stream_query.fetch()
+
+    for thisstream in rawuserstreams:
+      thisimagelist = thisstream.imagelist
+      logging.info('This imagelist from db: ' + str(thisimagelist))
+      newimagelist = list()
+      for image in thisimagelist:
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        logging.info('Build image object from db: ' + str(currentimage))
+        newimagelist.append(currentimage)
+      currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
+      logging.info('New current stream from db: ' + str(currentstream))
+      thisuserstreams.append(currentstream)
+
+    logging.info("Starting fetch streams subscribed to by: " + str(userid))
+    stream_query = Stream.query()
+    allstreams = stream_query.fetch()
+    rawusersubscriptionlist = list()
+    for thisstream in allstreams:
+      subusers = thisstream.streamsubscribers
+      logging.info("Stream: " + str(thisstream) + " has subscribers: " + str(subusers))
+      if subusers.count(userid) > 0:
+        rawusersubscriptionlist.append(thisstream)
+
+    for thisstream in rawusersubscriptionlist:
+      thisimagelist = thisstream.imagelist
+      logging.info('This imagelist from db: ' + str(thisimagelist))
+      newimagelist = list()
+      for image in thisimagelist:
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        logging.info('Build image object from db: ' + str(currentimage))
+        newimagelist.append(currentimage)
+      currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
+      logging.info('New current stream from db: ' + str(currentstream))
+      thisusersubscriptionlist.append(currentstream)
+
     logging.info("This users streams: " + str(thisuserstreams))
     logging.info('subscriptionlist: ' + str(thisusersubscriptionlist))
     
@@ -792,7 +811,6 @@ class DeleteStreams(webapp2.RequestHandler):
       #will take a list of streams
       deletestreams = data['streamnamestodelete']
       #iterate through list of streams input
-      payload = {'errorcode':100}
       stream_keys = list()
       logging.info('Before for loop')
       for deletestream in deletestreams:
@@ -803,35 +821,26 @@ class DeleteStreams(webapp2.RequestHandler):
         logging.info("past query")
         logging.info("My key is: " + str(mydeletestream.key))
         stream_keys.append(mydeletestream.key)
-        logging.info("Deleting streamname: " + str(deletestream))
-        index = -1
-        for stream in allstreamsforsort:
-          if stream['streamname'] == deletestream:
-            logging.info('Found stream to delete: ' + str(stream))
-            index = allstreamsforsort.index(stream)
-            logging.info('The index found was: ' + str(index))
-            imageobjects = allstreamsforsort[index]['imagelist']
-            imagestodelete = list()
-            for imageurl in imageobjects:
-              logging.info("Image url object: " + str(imageurl))
-              thisurl = imageurl['imageurl']
-              logging.info('This url: ' + str(thisurl))
-              parturl = thisurl.split('http://storage.googleapis.com')[1]
-              logging.info('Parturl: ' + str(parturl))
-              imagestodelete.append(parturl)
-              logging.info('Deleting: ' + str(imagestodelete))
-            delete_images(imagestodelete)
-            logging.info('Delete stream: ' + str(stream))
-            allstreamsforsort.remove(stream)
-            allstreamsbycreationtime.remove(stream)
-            payload = {'errorcode':0}
-      logging.info('Trying to really delete from db.')
+        logging.info("Deleting stream: " + str(mydeletestream))
+        rawimagestodelete = mydeletestream.imagelist
+        logging.info("Raw images to delete: " + str(rawimagestodelete))
+        imagestodelete = list()
+        for thisimage in rawimagestodelete:
+          thisurl = thisimage.imagefileurl
+          logging.info("Imageurl object: " + str(thisurl))
+          parturl = thisurl.split('http://storage.googleapis.com')[1]
+          logging.info('Parturl: ' + str(parturl))
+          imagestodelete.append(parturl)
+        logging.info('Deleting: ' + str(imagestodelete))
+        delete_images(imagestodelete)
+      logging.info('Trying to really delete from db: ' + str(stream_keys))
       ndb.delete_multi(stream_keys)
       logging.info('deleted from db')
-      logging.info('Allstreamsforsort is now: ' + str(allstreamsforsort))
+      payload = {'errorcode':0}
+      result = json.dumps(payload)
     except:
       payload = {'errorcode':100}
-    result = json.dumps(payload)
+      result = json.dumps(payload)
     self.response.write(result)
 
 class UnsubscribeStreams(webapp2.RequestHandler):
@@ -840,11 +849,21 @@ class UnsubscribeStreams(webapp2.RequestHandler):
     logging.info('Json data for this call: ' + str(data))
     user = data['unsubuser']
     streamname = data['streamname']
-    for stream in allstreamsforsort:
-      if stream['streamname'] == streamname:
-        stream['subscriberlist'].remove(user)
-    logging.info('Allstreamsforsort is now ' + str(allstreamsforsort))
-    payload = {'errorcode':0}
+    logging.info('Check if stream exists')
+    present_query = Stream.query(Stream.streamname == streamname)
+    existsstream = present_query.get()
+    logging.info('Query returned: ' + str(existsstream))
+    userlist = existsstream.streamsubscribers
+    payload = {}
+    try:
+      userlist.remove(user)
+      logging.info("updated subscriberlist is: " + str(userlist))
+      existsstream.streamsubscribers = userlist
+      existsstream.put()
+      payload = {'errorcode':0}
+    except:
+      payload = {'errorcode':8}
+      logging.info('Unsubscribe user does not exist.')
     result = json.dumps(payload)
     self.response.write(result)
 
@@ -854,7 +873,7 @@ class GetMostViewedStreams(webapp2.RequestHandler):
     data = json.loads(self.request.body)
     logging.info('No json data for this call')
     logging.info('Get all streams by most viewed')
-    allstream_query = Stream.query().order(Stream.viewdatelistlength)
+    allstream_query = Stream.query().order(-Stream.viewdatelistlength)
     allstreamsbyviews = allstream_query.fetch()
     newmostviewedlist = list()
     for stream in allstreamsbyviews:
