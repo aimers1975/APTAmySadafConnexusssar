@@ -735,19 +735,29 @@ class SearchStreams(webapp2.RequestHandler):
     streamFilterList = data['streamname']
     logging.info('Stream filter: ' + str(streamFilterList)) 
 
+    #get all streams
+    listOfStreams = list()
+
+    logging.info("Query to get all the streams")
+    allstreams_query = Stream.query().order(Stream.creationdate)
+    listOfStreams = allstreams_query.fetch()
+    logging.info('Query for all streams returned:' + str(listOfStreams))
+
     streamFilter = streamFilterList[0]
     
     searchResultList = list()
-    for streamItem in allstreamsforsort:
-      if streamFilter in streamItem['streamname']:
-        searchResultList.append(streamItem)
+    for streamItem in listOfStreams:
+      if streamFilter in streamItem.streamname:
+        currentStream = {'streamname':streamItem.streamname, 'creationdate':streamItem.creationdate, 'viewdatelist':streamItem.viewdatelist, 'viewdatelistlength':streamItem.viewdatelistlength, 'owner':streamItem.owner, 'subscribers':streamItem.streamsubscribers, 'taglist': streamItem.taglist, 'coverurl':streamItem.coverurl, 'commentlist':streamItem.commentlist, 'imagelist':streamItem.imagelist}
+        searchResultList.append(currentStream)
         #logging.info('Stream found with name match: ' + str(streamItem))
 
-    for streamItem in allstreamsforsort:
-      tagList = streamItem['taglist']
+    for streamItem in listOfStreams:
+      tagList = streamItem.taglist
       for tag in tagList:
         if streamFilter in tag:
-          searchResultList.append(streamItem)
+          currentStream = {'streamname':streamItem.streamname, 'creationdate':streamItem.creationdate, 'viewdatelist':streamItem.viewdatelist, 'viewdatelistlength':streamItem.viewdatelistlength, 'owner':streamItem.owner, 'subscribers':streamItem.streamsubscribers, 'taglist': streamItem.taglist, 'coverurl':streamItem.coverurl, 'commentlist':streamItem.commentlist, 'imagelist':streamItem.imagelist}
+          searchResultList.append(currentStream)
           #logging.info('Stream found with tag match: ' + str(streamItem))
 
     logging.info("SearchResultList: " + str(searchResultList))
