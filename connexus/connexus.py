@@ -266,6 +266,7 @@ class Image(ndb.Model):
   imagefilename = ndb.StringProperty()
   comments = ndb.StringProperty()
   imagefileurl = ndb.StringProperty()
+  imagecreationdate = ndb.StringProperty()
 
 class Stream(ndb.Model):
   streamname = ndb.StringProperty(indexed=True)
@@ -290,6 +291,16 @@ class MgmtPage(webapp2.RequestHandler):
     resultobj = json.loads(result.content)
     streamsiown = resultobj['streamlist']
     streamsisubscribe = resultobj['subscribedstreamlist']
+    #get the list of streamnames I own:
+    for ownstreams in streamsiown:
+      name = ownstreams['streamname']
+      logging.info("This stream name is: " + str(name))
+      imagelist = ownstreams['imagelist']
+      logging.info('This stream imagelist: ' + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist length' + str(numpics))
+      lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Creation date: " + lastnewpicdate)
     logging.info("Owned streams: " + str(streamsiown))
     logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
@@ -297,6 +308,8 @@ class MgmtPage(webapp2.RequestHandler):
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
+
+
 
 class CreatePage(webapp2.RequestHandler):
   def get(self):
@@ -521,7 +534,7 @@ class ManageStream(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
@@ -543,7 +556,7 @@ class ManageStream(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
@@ -598,6 +611,8 @@ class ViewStream(webapp2.RequestHandler):
       images_ds = existsstream.imagelist
       logging.info('Images list ds: ' + str(images_ds))
 
+      #TODO - There is a bug here, if the range sent is too long we probably want to send
+      # as many as we can, and right now we send nothing
       start = int(pagerange[0])
       logging.info('Pagerange start: ' + str(start))
       end = int(pagerange[1])
@@ -682,6 +697,7 @@ class UploadImage(webapp2.RequestHandler):
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
+    creationdate = str(datetime.now())
     #decode the image
     imagefile = encodedimage.decode('base64')
     #create an ID for the image - may not need this....
@@ -700,6 +716,7 @@ class UploadImage(webapp2.RequestHandler):
         myimage.imagefilename = imagefilename
         myimage.comments = comments
         myimage.imagefileurl = imagefileurl
+        myimage.imagecreationdate = creationdate
         myimage.put()
         thisimagelist = existsstream.imagelist
         thisimagelist.append(myimage)
@@ -811,6 +828,7 @@ class DeleteStreams(webapp2.RequestHandler):
       #iterate through list of streams input
       stream_keys = list()
       logging.info('Before for loop')
+      #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we have time
       for deletestream in deletestreams:
         logging.info("Starting fetch key for: " + str(deletestream))
         stream_query = Stream.query(Stream.streamname == deletestream)
@@ -878,7 +896,7 @@ class GetMostViewedStreams(webapp2.RequestHandler):
       logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
-        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagefileurl':image.imagefileurl}
+        currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':stream.streamname,'creationdate':stream.creationdate,'viewdatelist':stream.viewdatelist,'viewdatelistlength':stream.viewdatelistlength,'owner':stream.owner,'subscribers':stream.streamsubscribers,'taglist':stream.taglist,'coverurl':stream.coverurl,'commentlist':stream.commentlist,'coverurl':stream.coverurl,'imagelist':newimagelist}
