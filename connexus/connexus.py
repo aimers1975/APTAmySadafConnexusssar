@@ -1,3 +1,4 @@
+import cloudstorage as gcs
 from google.appengine.api import users
 from google.appengine.api import urlfetch
 from google.appengine.api import files, images
@@ -8,7 +9,6 @@ from google.appengine.api import app_identity
 from datetime import datetime,timedelta
 from time import gmtime, strftime
 from google.appengine.ext import ndb
-import cloudstorage as gcs
 import webapp2
 import logging
 import json
@@ -35,7 +35,7 @@ myimages = list()
 cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -254,8 +254,10 @@ SEARCH_RESULT_HTML = """\
 .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
 .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
 </style>
-<table>
+<table width="500" cellpadding="5">
+<tr>
 %s
+</tr>
 </table>
 <div>
 """
@@ -331,12 +333,15 @@ def generatetrendingstreams(trendinglist):
 
 def generatesearchedstreams(searchlist):
   BEGIN = '<tr>'
-  START_ITEM_HTML = '<td class="tg-031e">'
+  START_ITEM_HTML = '<td align="center" valign="center">'
   END_ITEM_HTML = '</td>'
+  START_IMG_SRC_TAG = '<img src="'
+  #END_IMG_SRC_TAG = '" width="20%"/>'
+  END_IMG_SRC_TAG = '"/>'
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + searchlist['streamnames'][x] + END_ITEM_HTML 
+    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + searchlist['streamnames'][x] + END_ITEM_HTML
   return htmlstringfinal
 
 def generateallstreams(allStreamslist):
@@ -630,8 +635,9 @@ class SearchPage(webapp2.RequestHandler):
       #searchedStreams = resultobj['mostviewedstreams']
       logging.info('SearchStreams from service: ' + str(searchedStreams))
 
-      searchedStreamsResult = {'streamnames':list(),'imagenums':list()}
+      searchedStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
       for tstream in searchedStreams:
+        imgstring =""
         name = tstream['streamname']
         logging.info("Sreached stream : " + str(name))
         imagelist = tstream['imagelist']
@@ -640,12 +646,24 @@ class SearchPage(webapp2.RequestHandler):
         logging.info('This stream imagelist: ' + str(numpics))
         if len(imagelist) == 0:
           lastnewpicdate = 'N/A'
+          imgString = ""
         else:
           lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+          imgString = imagelist[0]['imagefileurl']
+          logging.info('image URL is : ' + str(imgString))
+
+          #bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+          #logging.info('bucket_name is : ' + str(bucket_name))
+          #gcs_filename = imagelist[len(imagelist)-1]['imageid']
+          #blob_key = blobstore.create_gs_key('/gs/' + bucket_name + '/' + name + '/' + gcs_filename)
+          #logging.info('blob_key is : ' + str(blob_key))
+          # Fetch data.
+          #imgstring = 'Fetched data ' + str(blobstore.fetch_data(blob_key, 0, 2)) + '\n'
         logging.info("Sreached stream creation date : " + lastnewpicdate)
 
         searchedStreamsResult['streamnames'].append(name)
         searchedStreamsResult['imagenums'].append(numpics)
+        searchedStreamsResult['image'].append(imgString)
       logging.info('Search returned following Streams :' + str(searchedStreamsResult))
       searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
       length = len(searchedStreamsResult['streamnames'])
@@ -1083,6 +1101,7 @@ class UploadImage(webapp2.RequestHandler):
         thisimagelist.append(myimage)
         existsstream.imagelist = thisimagelist
         existsstream.put()
+        logging.info("Existing streams with image list: " + str(existsstream))
         logging.info("Thisimagelist: " + str(thisimagelist))
         payload = json.dumps({"errorcode":0})
       else:
@@ -1140,7 +1159,15 @@ class ViewAllStreams(webapp2.RequestHandler):
 
 class SearchStreams(webapp2.RequestHandler):
   def convertStreamObjToList(self, streamObj):
-    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':streamObj.imagelist}
+    streamObjList = streamObj.imagelist
+    #logging.info('Image list from Stream object : ' + str(streamObjList))
+    imageList = list()
+    for img in streamObjList:
+      #logging.info('img is : ' + str(img))
+      imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
+      imageList.append(imgObjList)
+    logging.info('imageList : ' + str(imageList))
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':imageList}
     return streamList
 
   def post(self):
