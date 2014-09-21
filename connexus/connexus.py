@@ -85,7 +85,7 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete Checked Streams" /></></body></html>
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="True" /></></body></html>
 <h3>Streams I subscribe to</h3>
 
 <style type="text/css">
@@ -106,7 +106,7 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe Checked Streams" /></></body></html>"""
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="True" /></></body></html>"""
 
 EMAIL_HTML = """\
 <html>
@@ -192,29 +192,30 @@ def generatestreamsiownlist(updatelist):
   BEGIN = '<tr>'
   START_ITEM_HTML = '<td class="tg-031e">'
   END_ITEM_HTML = '</td>'
-  START_CHECKBOX = '<td class="tg-031e"><input id="'
-  MIDDLE_CHECKBOX = '" name="'
-  END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="own'
+  MIDDLE_CHECKBOX = '" name="own'
+  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
   for x in range(0,length):
     htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
-    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + MIDDLE_CHECKBOX + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
   return htmlstringfinal
 
 def generatestreamssubscribed(updatelist):
   BEGIN = '<tr>'
   START_ITEM_HTML = '<td class="tg-031e">'
   END_ITEM_HTML = '</td>'
-  START_CHECKBOX = '<td class="tg-031e"><input id="'
-  MIDDLE_CHECKBOX = '" name="'
-  END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="sub'
+  MIDDLE_CHECKBOX = '" name="sub'
+  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
   for x in range(0,length):
     htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
-    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
-  logging.info('htmlstringfinal : ' + htmlstringfinal)
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + MIDDLE_CHECKBOX + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
   return htmlstringfinal  
 
 def generatetrendingstreams(trendinglist):
@@ -874,6 +875,9 @@ class UploadImage(webapp2.RequestHandler):
       payload = json.dumps({"errorcode":0})
     self.response.write(payload)
 
+class Error(webapp2.RequestHandler):
+  def get(self):
+    self.request.write('Reached error page.')
 
 class ViewAllStreams(webapp2.RequestHandler):
   def post(self):
@@ -944,8 +948,45 @@ class SearchStreams(webapp2.RequestHandler):
 
 class HandleMgmtForm(webapp2.RequestHandler):
   def post(self):
-    #login = cgi.escape(self.request.get(''))
+    user = users.get_current_user()
+    logging.info("Current user is: " + str(user))
+    if user:
+      self.response.write(MAIN_PAGE_HTML)
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
     logging.info("Management form data: " + str(self.request))
+    delchecked = cgi.escape(self.request.get('delete_checked'))
+    unsubchecked = cgi.escape(self.request.get('unsubscribe_checked'))
+    streamnames = list()
+    try:
+      #get name of stream to delete
+      if delchecked:
+        logging.info('Delete was checked')
+        checkboxid = 'own'
+      if unsubchecked:
+        logging.info('Unsub was checked')
+        checkboxid = 'sub'
+      logging.info("This checkbox id is: " + checkboxid)
+      try:
+        streamnames = self.request.get_all(checkboxid)
+      except:
+        streamnames = self.request.get(checkboxid)
+      logging.info("From checkbox we got streams: " + str(streamnames))
+      if delchecked:
+        url = 'http://' + AP_ID_GLOBAL + '/DeleteStreams'
+        mydata = json.dumps({'streamnamestodelete':streamnames})
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+      elif unsubchecked:
+        url = 'http://' + AP_ID_GLOBAL + '/UnsubscribeStreams'
+        logging.info('Set url for unsubscribe')
+        for substream in streamnames:
+          logging.info('Looping through streams: ' + str(substream))
+          mydata = json.dumps({'unsubuser':str(user),'streamname':str(substream)})
+          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+          logging.info(str(result))
+      self.redirect('/MgmtPage')
+    except:
+      self.redirect('/Error')
 
 class DeleteStreams(webapp2.RequestHandler):
   def post(self):
@@ -1172,6 +1213,7 @@ application = webapp2.WSGIApplication([
     ('/Report', Report),
     ('/DeleteAllImages', DeleteAllImages),
     ('/email', email),
+    ('/error', Error),
     ('/emailHandler', EmailHandler),
     ('/trends', TrendingStreams),
     ('/cronSettings', TrendingStreamsHandler),
