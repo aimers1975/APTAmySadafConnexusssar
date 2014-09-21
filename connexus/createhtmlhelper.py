@@ -40,32 +40,34 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 <input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe Checked Streams" /></></body></html>"""
 
 def generatestreamsiownlist(updatelist):
-	BEGIN = '<tr>'
-	START_ITEM_HTML = '<td class="tg-031e">'
-	END_ITEM_HTML = '</td>'
-	START_CHECKBOX = '<td class="tg-031e"><input id="'
-	MIDDLE_CHECKBOX = '" name="'
-	END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
-	htmlstringfinal = ""
-	length = len(updatelist['streamnames'])
-	for x in range(0,length):
-		htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
-		htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
-	return htmlstringfinal
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="own-'
+  MIDDLE_CHECKBOX = '" name="own-'
+  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  END_CHECKBOX = '" /></td></tr>'
+  htmlstringfinal = ""
+  length = len(updatelist['streamnames'])
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + str(x) + MIDDLE_CHECKBOX + str(x) + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
+  return htmlstringfinal
 
 def generatestreamssubscribed(updatelist):
-	BEGIN = '<tr>'
-	START_ITEM_HTML = '<td class="tg-031e">'
-	END_ITEM_HTML = '</td>'
-	START_CHECKBOX = '<td class="tg-031e"><input id="'
-	MIDDLE_CHECKBOX = '" name="'
-	END_CHECKBOX = '" class="element checkbox" type="checkbox" value="1" /></td></tr>'
-	htmlstringfinal = ""
-	length = len(updatelist['streamnames'])
-	for x in range(0,length):
-		htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
-		htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + MIDDLE_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
-	return htmlstringfinal	
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  START_CHECKBOX = '<td class="tg-031e"><input id="sub-'
+  MIDDLE_CHECKBOX = '" name="sub-'
+  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  END_CHECKBOX = '" /></td></tr>'
+  htmlstringfinal = ""
+  length = len(updatelist['streamnames'])
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + str(x) + MIDDLE_CHECKBOX + str(x) + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
+  return htmlstringfinal 
 
 myupdatelist = {'streamnames':['amy1','amy2','amy3'],'dates':['10-30-2014','12-20-2014','3-5-2014'],'imagenums':[34,700,2]}
 html = generatestreamsiownlist(myupdatelist)
