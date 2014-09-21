@@ -90,17 +90,20 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul>"""
 
-VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg"><tr>
+VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
+<input id="Streamname" name="Streamname" type="text" input style="font-size:25px" readonly="readonly" value="%s's Stream"><br>
+<div><table class="tg"><tr>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
   </tr>
 </table></div>
-<div><br><br><table class="tg"><tr><th class="tg-031e">File Name</th><th class="tg-031e"><input id="Filename" name="Filename" type="file"/></textarea></th></tr>
-<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td><td class="tg-031e">Upload An 
-Image</td></tr></table><br><br></div>
-<class="buttons"><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
+<div><br><br><table class="tg"><label class="description" for="Comments">Comments</label><br><tr><textarea id="Comments" name="Comments" class="element textarea 
+
+medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
+<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td></tr></table><br><br></div>
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>"""
 
 
@@ -411,24 +414,42 @@ class ViewPageHandler(webapp2.RequestHandler):
     logging.info('Test View page handler:')
     try:
       imagefile = self.request.get('Filename')
+      morepics = self.request.get('More_Pictures')
+      logging.info('Morepics is: ' + str(morepics))
+      upload = self.request.get('Upload')
+      logging.info('Upload is: ' + str(upload))
+      subscribe = self.request.get('Subscribe')
+      logging.info("Subscribe is: " + str(subscribe))
+      filename = self.request.params["Filename"].filename 
       picdata = imagefile.encode("base64")
-      logging.info("filename: " + str(imagefile))
-      streamname = "amytest"
-      comments = "This is my comment"
-      filename = "realupload.jpg"
-      mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": "image/jpeg", "comments": comments, "filename": filename})
-      url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
-      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-      logging.info("upload image result: " + str(result.content))
+      logging.info("filename: " + str(filename))
+      (name,extension) = os.path.splitext(filename)
+      contenttype = ""
+      extension = extension.lower()
+      if extension == '.gif':
+        contenttype = 'image/gif'
+      elif extension == '.jpg':
+        contenttype = 'image/jpeg'
+      elif extension == '.png':
+        contenttype = 'image/png'
+      else:
+        contenttype = None
+      logging.info("Content type is: " + str(contenttype))
+      if not contenttype == None:
+        streamname = self.request.get('Streamname')
+        streamname = streamname.split("'s Str")[0]
+        logging.info("Streamname is: " + str(streamname))
+        comments = self.request.get('Comments')
+        mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
+        url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+        logging.info("upload image result: " + str(result.content))
+      else:
+        logging.info('Unrecognized image type.')
       self.redirect('/MgmtPage')
-
     except:
-      form = cgi.FieldStorage()
-      filedata = form['Filename']
-      logging.info("Filedata: " + str(filedata))
-      if filedata.file:
-        thisfile = filedata.file.read()
-        logging.info('This file is:' + str(thisfile))
+      logging.info("Problem uploading file")
+      self.redirect('/Error')
 
 class Image(ndb.Model):
   imageid = ndb.StringProperty()
@@ -528,7 +549,7 @@ class ViewPage(webapp2.RequestHandler):
       mydata = json.dumps({'streamname':streamname,'pagerange':[0,0]})
       result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
       logging.info("ViewStream call result: " + str(result.content))
-      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + VIEW_STREAM_HTML)
+      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % str(streamname)))
 
 
 class SearchPage(webapp2.RequestHandler):

@@ -1,12 +1,14 @@
 <!DOCTYPE html><html><head><title>Connex.us!</title></head>           
-<body><head><h1>Connex.us</h1></head>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<body><head><h1>Connex.us</h1></head><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Style Test</title>
 <style type="text/css">
 #list 
 .horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
 .first { border-left: none; padding-left: 0; }
+input[type=text] {
+    border: none;
+    background: transparent;
+}
 </style>
 </head>
 <div>
@@ -19,6 +21,7 @@
 <li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul></div>
+<input id="Streamname" name="Streamname" type="text" input style="font-size:25px" readonly="readonly" value="Amys Stream"><br>
 <div><table class="tg"><tr>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
@@ -26,8 +29,8 @@
     <th class="tg-031e"><class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
   </tr>
 </table></div>
-<div><br><br><table class="tg"><tr><th class="tg-031e">File Name</th><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></textarea></th></tr>
-<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td><td class="tg-031e">Upload An Image</td></tr></table><br><br></div>
+<div><br><br><table class="tg"><label class="description" for="Comments">Comments</label><br><tr><textarea id="Comments" name="Comments" class="element textarea medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
+<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td></tr></table><br><br></div>
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>
 
