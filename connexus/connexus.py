@@ -223,6 +223,20 @@ BEGIN = '<tr>'
 START_ITEM_HTML = '<td class="tg-031e">'
 END_ITEM_HTML = '</td>'
 
+ALL_STREAMS_HTML = """\
+<div id="article">
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table>
+%s
+</table>
+<div>
+"""
+
 def olderthanhour(checktimestring):
   hourago = datetime.now() - timedelta(minutes=1)
   if(checktimestring < str(hourago)):
@@ -272,6 +286,16 @@ def generatesearchedstreams(searchlist):
   length = len(searchlist['streamnames'])
   for x in range(0,length):
     htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + searchlist['streamnames'][x] + END_ITEM_HTML 
+  return htmlstringfinal
+
+def generateallstreams(allStreamslist):
+  BEGIN = '<tr>'
+  START_ITEM_HTML = '<td class="tg-031e">'
+  END_ITEM_HTML = '</td>'
+  htmlstringfinal = ""
+  length = len(allStreamslist['streamnames'])
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + allStreamslist['streamnames'][x] + END_ITEM_HTML 
   return htmlstringfinal
 
 def addcoverurl(coverurl,streamname):
@@ -367,7 +391,7 @@ class MgmtPage(webapp2.RequestHandler):
     logging.info("Current user is: " + user)
     mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
-    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
     logging.info('Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     streamsiown = resultobj['streamlist']
@@ -527,6 +551,43 @@ class TrendingPage(webapp2.RequestHandler):
 class SocialPage(webapp2.RequestHandler):
   def get(self):
     fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Social page coming soon</body></html>"
+    self.response.write(fullhtml)
+
+class ViewAllStreamsPage(webapp2.RequestHandler):
+  def get(self):
+    url = 'http://' + AP_ID_GLOBAL + '/ViewAllStreams'
+    params = json.dumps({})
+    logging.info('URL for ViewAllStreams is : ' + str(url))
+    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+    logging.info('ViewAllStreams Result is: ' + str(result.content))
+    resultobj = json.loads(result.content)
+    allStreams = resultobj['streamlist']
+    allCoverUrls = resultobj['coverurls']
+    logging.info('ViewAllStreams from service: ' + str(allStreams))
+
+    #get list of top three streams
+    allStreamsResult = {'streamnames':list(),'coverurls':list()}
+    for tstream in allStreams:
+      logging.info('tstream : ' + str(tstream))
+      name = tstream['streamname']
+      logging.info("Stream : " + str(name))
+      imagelist = tstream['imagelist']
+      logging.info("Stream image list : " + str(imagelist))
+      numpics = len(imagelist)
+      logging.info('This stream imagelist: ' + str(numpics))
+      if len(imagelist) == 0:
+        lastnewpicdate = 'N/A'
+      else:
+        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+      logging.info("Stream creation date : " + lastnewpicdate)
+
+      allStreamsResult['streamnames'].append(name)
+      #trendingStreamsResult['dates'].append(lastnewpicdate)
+      allStreamsResult['imagenums'].append(numpics)
+    logging.info('All Streams :' + str(allStreamsResult))
+    allStreamHtml = generateallstreams(allStreamsResult)
+    logging.info('All Stream table html :' + str(allStreamHtml))
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (ALL_STREAMS_HTML %(allStreamHtml)) + "</body></html>"
     self.response.write(fullhtml)
 
 #Sample function, we may not use
@@ -1091,7 +1152,7 @@ class DeleteStreams(webapp2.RequestHandler):
       #iterate through list of streams input
       stream_keys = list()
       logging.info('Before for loop')
-      #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we have time
+      #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we havemydata time
       for deletestream in deletestreams:
         logging.info("Starting fetch key for: " + str(deletestream))
         stream_query = Stream.query(Stream.streamname == deletestream)
@@ -1331,6 +1392,7 @@ application = webapp2.WSGIApplication([
     ('/SearchPage', SearchPage),
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
+    ('/ViewAllStreamsPage', ViewAllStreamsPage),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
