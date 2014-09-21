@@ -33,6 +33,15 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
     <th class="tg-031e">Views</th>
     <th class="tg-031e">Unsubscribe</th>
   </tr>
+<style>
+.submitLink {
+background-color: transparent;
+text-decoration: underline;
+border: none;
+color: blue;
+cursor: pointer;
+}
+</style>
 %s
 </table>
 
@@ -42,6 +51,8 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 def generatestreamsiownlist(updatelist):
   BEGIN = '<tr>'
   START_ITEM_HTML = '<td class="tg-031e">'
+  NAME_LINK = '<class="buttons"><input type="hidden" name="form_id" value="903438" /><br><input id="view" class="submitLink" type="submit" name="view" value="'
+  NAME_LINK2 = '" />'
   END_ITEM_HTML = '</td>'
   START_CHECKBOX = '<td class="tg-031e"><input id="own-'
   MIDDLE_CHECKBOX = '" name="own-'
@@ -50,7 +61,7 @@ def generatestreamsiownlist(updatelist):
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + NAME_LINK + updatelist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
     htmlstringfinal = htmlstringfinal + START_CHECKBOX + str(x) + MIDDLE_CHECKBOX + str(x) + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
   return htmlstringfinal
 

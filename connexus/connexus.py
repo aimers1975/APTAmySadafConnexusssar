@@ -34,7 +34,7 @@ myimages = list()
 cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -43,9 +43,32 @@ MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</titl
 <input id="password" name="password" class="element text medium" type="text" maxlength="255" value="Gmail Password"/></div></><br>
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
 <input id="saveForm" class="button_text" type="submit" name="submit" value="Login" /></></body></html>"""
+ 
+<<<<<<< HEAD
+           
+=======
 
-HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
-<div id="form_container"><form><div class="form_description"></div>            
+CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form action="/GetStreamData" method="post" action=""><div class="form_description"></div>            
+    <label class="description" for="streamname">Name Your Stream </label>
+    <div><input id="streamname" name="streamname" class="element text medium" type="text" maxlength="255" value=""/></div> 
+    <label class="description" for="subscribers">Add Subscribers </label><div>
+      <textarea id="subscribers" name="subscribers" class="element textarea medium"></textarea> </div> 
+    <label class="description" for="submessage">(Optional) Message For Subscribers </label><div>
+      <textarea id="submessage" name="submessage" class="element textarea medium"></textarea></div> 
+    <label class="description" for="tags">Tag Your Stream </label> <div>
+      <input id="tags" name="tags" class="element text medium" type="text" maxlength="255" value=""/> </div> 
+    <label class="description" for="coverurl">(Optional) URL For Cover Image </label>  <div>
+      <input id="coverurl" name="coverurl" class="element text medium" type="text" maxlength="255" value=""/> </div> 
+    <class="buttons"> <input type="hidden" name="form_id" value="904777" /> <input id="saveForm" class="button_text" type="submit" name="submit" value="Submit" /></>
+      </ul>
+    </form> 
+  </div>
+  </body>
+</html>"""
+
+
+HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
+>>>>>>> Create stream page working.
 <body><head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -67,7 +90,7 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul>"""
 
-MGMT_PAGE_HTML = """<h3>Streams I own</h3>
+MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
@@ -81,8 +104,18 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
     <th class="tg-031e">Delete</th>
   </tr>
 <!--will need to dynamically generate each ITEM based on streamlist-->
+<style>
+.submitLink {
+background-color: transparent;
+text-decoration: underline;
+border: none;
+color: blue;
+cursor: pointer;
+}
+</style>
 %s
 </table>
+
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
 <input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
@@ -173,6 +206,7 @@ SEARCH_STREAMS_HTML = """\
 </div>
 """
 
+
 SEARCH_RESULT_HTML = """\
 <div id="article">
 <style type="text/css">
@@ -186,6 +220,11 @@ SEARCH_RESULT_HTML = """\
 </table>
 <div>
 """
+NAME_LINK = '<class="buttons"><input type="hidden" name="form_id" value="903438" /><br><input id="view" class="submitLink" type="submit" name="view" value="'
+NAME_LINK2 = '" />'
+BEGIN = '<tr>'
+START_ITEM_HTML = '<td class="tg-031e">'
+END_ITEM_HTML = '</td>'
 
 def olderthanhour(checktimestring):
   hourago = datetime.now() - timedelta(minutes=1)
@@ -199,33 +238,23 @@ def olderthanhour(checktimestring):
     return False
 
 def generatestreamsiownlist(updatelist):
-  BEGIN = '<tr>'
-  START_ITEM_HTML = '<td class="tg-031e">'
-  END_ITEM_HTML = '</td>'
-  START_CHECKBOX = '<td class="tg-031e"><input id="own'
-  MIDDLE_CHECKBOX = '" name="own'
-  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  START_CHECKBOX = '<td class="tg-031e"><input id="own" name="own" class="element checkbox" type="checkbox" value="'
   END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
-    htmlstringfinal = htmlstringfinal + START_CHECKBOX + MIDDLE_CHECKBOX + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + NAME_LINK + updatelist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
   return htmlstringfinal
 
 def generatestreamssubscribed(updatelist):
-  BEGIN = '<tr>'
-  START_ITEM_HTML = '<td class="tg-031e">'
-  END_ITEM_HTML = '</td>'
-  START_CHECKBOX = '<td class="tg-031e"><input id="sub'
-  MIDDLE_CHECKBOX = '" name="sub'
-  MIDDLE_CHECKBOX_2 = '" class="element checkbox" type="checkbox" value="'
+  START_CHECKBOX = '<td class="tg-031e"><input id="sub" name="sub" class="element checkbox" type="checkbox" value="'
   END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + updatelist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
-    htmlstringfinal = htmlstringfinal + START_CHECKBOX + MIDDLE_CHECKBOX + MIDDLE_CHECKBOX_2 + updatelist['streamnames'][x] + END_CHECKBOX
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + NAME_LINK + updatelist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML + START_ITEM_HTML+ updatelist['dates'][x] + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['imagenums'][x]) + END_ITEM_HTML + START_ITEM_HTML + str(updatelist['views'][x]) + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_CHECKBOX + updatelist['streamnames'][x] + END_CHECKBOX
   return htmlstringfinal  
 
 def generatetrendingstreams(trendinglist):
@@ -328,6 +357,7 @@ class Stream(ndb.Model):
   viewdatelist = ndb.StringProperty(repeated=True)
   viewdatelistlength = ndb.IntegerProperty()
   owner = ndb.StringProperty()
+  submessage = ndb.StringProperty()
   streamsubscribers = ndb.StringProperty(repeated=True)
   taglist = ndb.StringProperty(indexed=False,repeated=True)
   coverurl = ndb.StringProperty(indexed=False)
@@ -393,13 +423,20 @@ class MgmtPage(webapp2.RequestHandler):
 
 class CreatePage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Create page coming soon</body></html>"
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + CREATE_STREAM_HTML
     self.response.write(fullhtml)
 
 class ViewPage(webapp2.RequestHandler):
   def get(self):
     fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> View page coming soon</body></html>"
     self.response.write(fullhtml)
+
+  def post(self):
+      data = json.loads(self.request.body)
+      logging.info('Json data sent to this function: ' + str(data))
+      streamname = data['streamname']
+      self.response.write(HEADER_HTML + "<br><br><br> This is the view for " + str(streamname) + "</body></html>")
+
 
 class SearchPage(webapp2.RequestHandler):
   def get(self):
@@ -545,6 +582,8 @@ class GetStreamData(webapp2.RequestHandler):
         logging.info('Current user: ' + str(user))
         streamname = cgi.escape(self.request.get('streamname'))
         logging.info('Stream Name: ' + str(streamname))
+        submessage = cgi.escape(self.request.get('submessage'))
+        logging.info('Subdata: ' + str(submessage))
         subscriberdata = cgi.escape(self.request.get('subscribers'))
         logging.info('Subscriber Data: ' + str(subscriberdata))
         subscriberlist = processSubscriberList(subscriberdata)
@@ -563,12 +602,13 @@ class GetStreamData(webapp2.RequestHandler):
         self.response.write('Cover url: ' + str(coverurl))
         self.response.write('Tags: ' + str(tagdata))
         self.response.write('</pre></body></html>')
-        prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'coverurl':coverurl,'currentuser':user}
+        prejson = {'streamname':streamname,'subscribers':subscriberlist,'tags':taglist,'submessage':submessage,'coverurl':coverurl,'currentuser':str(user)}
         mydata = json.dumps(prejson)
-        logging.info('JSON data: ', str(mydata))
+        logging.info('JSON data: ' + str(mydata))
         url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
         logging.info("Create stream call result: " + str(result.content))
+        self.redirect('/MgmtPage')
 
 
 class CreateStream(webapp2.RequestHandler):
@@ -630,6 +670,10 @@ class CreateStream(webapp2.RequestHandler):
         streamsubscribers = data['subscribers']
         stream.streamsubscribers = streamsubscribers
         logging.info('\nstreamsubscribers: ' + str(streamsubscribers))
+
+        submessage = data['submessage']
+        stream.submessage = submessage
+        logging.info('\nsubmessage: ' + str(submessage))
 
         taglist = data ['tags']
         stream.taglist = taglist
@@ -976,6 +1020,8 @@ class SearchStreams(webapp2.RequestHandler):
     logging.info('Exiting SerachStreams Handler')
 
 class HandleMgmtForm(webapp2.RequestHandler):
+
+
   def post(self):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
@@ -986,25 +1032,39 @@ class HandleMgmtForm(webapp2.RequestHandler):
     logging.info("Management form data: " + str(self.request))
     delchecked = cgi.escape(self.request.get('delete_checked'))
     unsubchecked = cgi.escape(self.request.get('unsubscribe_checked'))
+    view = cgi.escape(self.request.get('view'))
+    logging.info('View Retrieved: ' + str(view))
     streamnames = list()
+    checkboxid = ""
     try:
       #get name of stream to delete
-      if delchecked == 'Delete':
+      if not str(view) == "":
+        logging.info('We need to switch to view page')
+        url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
+        mydata = json.dumps({'streamname':str(view)})
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        #self.response.write(str(result.content))
+        viewhtml = str(result.content)
+        logging.info(viewhtml)
+      elif delchecked == 'Delete':
         logging.info('Delete was checked')
         checkboxid = 'own'
-      if unsubchecked == 'Unsubscribe':
+      elif unsubchecked == 'Unsubscribe':
         logging.info('Unsub was checked')
         checkboxid = 'sub'
-      logging.info("This checkbox id is: " + checkboxid)
+      logging.info("This checkbox id is: " + str(checkboxid))
       try:
         streamnames = self.request.get_all(checkboxid)
       except:
         streamnames = self.request.get(checkboxid)
       logging.info("From checkbox we got streams: " + str(streamnames))
-      if delchecked == 'Delete':
+      if not str(view) == "":
+        logging.info('This was a view stream call')
+      elif delchecked == 'Delete':
         url = 'http://' + AP_ID_GLOBAL + '/DeleteStreams'
         mydata = json.dumps({'streamnamestodelete':streamnames})
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        self.redirect('/MgmtPage')
       elif unsubchecked == 'Unsubscribe':
         url = 'http://' + AP_ID_GLOBAL + '/UnsubscribeStreams'
         logging.info('Set url for unsubscribe')
@@ -1015,7 +1075,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
           logging.info(str(result.content))
           if not (str(result.content) == "{'errorcode':0}"):
             self.redirect('/Error')
-      self.redirect('/MgmtPage')
+        self.redirect('/MgmtPage')
     except:
       self.redirect('/Error')
 

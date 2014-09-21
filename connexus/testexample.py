@@ -30,7 +30,7 @@ if __name__ == '__main__':
     #Create a new stream
     print('Testing create a good stream')
     CreateStreamServiceURL = '/CreateStream'
-    CreateStream1JSON = {"streamname": "amytest", "coverurl": "www.test.com", "currentuser": "amy_hindman@yahoo.com", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "tags": ["#test"]}
+    CreateStream1JSON = {"streamname": "amytest", "coverurl": "www.test.com", "currentuser": "amy_hindman@yahoo.com", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "submessage":"test", "tags": ["#test"]}
     response = send_request(conn,CreateStreamServiceURL,CreateStream1JSON,True)
     assert response == {'errorcode': 0}
     time.sleep(1)
@@ -43,14 +43,14 @@ if __name__ == '__main__':
 
     print('Testing error case: Stream with no username')
     #Handle error case where no user name is sent
-    CreateStream1JSON = {"streamname": "amytest2", "coverurl": "www.test.com", "currentuser": "", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "tags": ["#test"]}
+    CreateStream1JSON = {"streamname": "amytest2", "coverurl": "www.test.com", "currentuser": "", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "submessage":"test", "tags": ["#test"]}
     response = send_request(conn,CreateStreamServiceURL,CreateStream1JSON,True)
     assert response == {'errorcode': 2}
     time.sleep(1)
 
     print('Testing error case: Stream with no streamname')
     #TODO: This needs to failHandle error case where no streamname is sent
-    CreateStream1JSON = {"streamname": "", "coverurl": "www.test.com", "currentuser": "amy_hindman@yahoo.com", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "tags": ["#test"]}
+    CreateStream1JSON = {"streamname": "", "coverurl": "www.test.com", "currentuser": "amy_hindman@yahoo.com", "subscribers": ["amy_hindman@yahoo.com", "aimers1975@gmail.com", "bob@hotmail.com"], "submessage":"test", "tags": ["#test"]}
     response = send_request(conn,CreateStreamServiceURL,CreateStream1JSON,True)
     assert response == {'errorcode': 3}
     time.sleep(1)
