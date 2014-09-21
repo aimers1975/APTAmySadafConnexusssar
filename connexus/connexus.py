@@ -365,6 +365,7 @@ class MgmtPage(webapp2.RequestHandler):
   def get(self):
     user = str(users.get_current_user())
     logging.info("Current user is: " + user)
+    mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
     result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
     logging.info('Result is: ' + str(result.content))
