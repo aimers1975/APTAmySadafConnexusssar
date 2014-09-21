@@ -103,6 +103,18 @@ if __name__ == '__main__':
     assert len(response['subscribedstreamlist']) == 0
     time.sleep(1)
 
+    print('Testing subscribe to stream')
+    SubscribeStreamServiceURL = '/SubscribeStream'
+    SubscribeStreamJSON = {"subuser": "amy_hindman@yahoo.com","streamname":"amytest"}
+    response = send_request(conn,SubscribeStreamServiceURL,SubscribeStreamJSON,True)
+    assert response == {'errorcode': 0}
+    response = send_request(conn,ManageStreamURL,ManageStreamJSON,True)
+    print('Streamlist is: ' + str(response['streamlist']) + '\n')
+    print('Subscribed stream list is: ' + str(response['subscribedstreamlist']) + '\n')
+    assert len(response['streamlist']) > 0
+    assert len(response['subscribedstreamlist']) == 1
+    time.sleep(1)
+
     print('Testing get most viewed streams')
     GetMostViewedStreamsURL = '/GetMostViewedStreams'
     GetMostViewedStreamsJSON = {"userid":"amy_hindman@yahoo.com"}
