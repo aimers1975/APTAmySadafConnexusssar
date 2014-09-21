@@ -414,7 +414,9 @@ class MgmtPage(webapp2.RequestHandler):
     logging.info("Owned streams: " + str(streamsiown))
     logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
+      updatedheader = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL))
+      logging.info("Updated header: " + str(updatedheader))
+      fullhtml = updatedheader + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
@@ -433,7 +435,11 @@ class ViewPage(webapp2.RequestHandler):
       data = json.loads(self.request.body)
       logging.info('Json data sent to this function: ' + str(data))
       streamname = data['streamname']
-      self.response.write(HEADER_HTML + "<br><br><br> This is the view for " + str(streamname) + "</body></html>")
+      url = 'http://' + AP_ID_GLOBAL + '/ViewStream'
+      mydata = json.dumps({'streamname':streamname,'pagerange':[0,0]})
+      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+      logging.info("ViewStream call result: " + str(result.content))
+      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> This is the view for " + str(streamname) + "</body></html>")
 
 
 class SearchPage(webapp2.RequestHandler):
@@ -1039,7 +1045,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
         url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
         mydata = json.dumps({'streamname':str(view)})
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-        #self.response.write(str(result.content))
+        self.response.write(str(result.content))
         viewhtml = str(result.content)
         logging.info(viewhtml)
       elif delchecked == 'Delete':
