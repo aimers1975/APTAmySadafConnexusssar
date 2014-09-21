@@ -44,9 +44,7 @@ MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</titl
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
 <input id="saveForm" class="button_text" type="submit" name="submit" value="Login" /></></body></html>"""
  
-<<<<<<< HEAD
-           
-=======
+
 
 CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form action="/GetStreamData" method="post" action=""><div class="form_description"></div>            
     <label class="description" for="streamname">Name Your Stream </label>
@@ -68,7 +66,6 @@ CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form ac
 
 
 HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
->>>>>>> Create stream page working.
 <body><head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
