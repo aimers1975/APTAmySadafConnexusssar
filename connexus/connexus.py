@@ -220,7 +220,9 @@ TRENDING_STREAMS_HTML = """\
 .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
 </style>
 <table>
+<tr>
 %s
+</tr>
 </table>
 </div>
 """
@@ -316,12 +318,15 @@ def generatestreamssubscribed(updatelist):
 
 def generatetrendingstreams(trendinglist):
   BEGIN = '<tr>'
-  START_ITEM_HTML = '<td class="tg-031e">'
+  START_ITEM_HTML = '<td align="center" valign="center">'
   END_ITEM_HTML = '</td>'
+  START_IMG_SRC_TAG = '<img src="'
+  #END_IMG_SRC_TAG = '" width="20%"/>'
+  END_IMG_SRC_TAG = '"/>'
   htmlstringfinal = ""
   length = 3
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + trendinglist['streamnames'][x] + END_ITEM_HTML 
+    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + trendinglist['image'][x] + END_IMG_SRC_TAG + "<br />" + trendinglist['streamnames'][x] + END_ITEM_HTML 
   return htmlstringfinal
 
 def generatesearchedstreams(searchlist):
@@ -628,8 +633,9 @@ class TrendingPage(webapp2.RequestHandler):
     logging.info('TrendingStreams from service: ' + str(trendingStreams))
 
     #get list of top three streams
-    trendingStreamsResult = {'streamnames':list(),'imagenums':list()}
+    trendingStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
     for tstream in trendingStreams:
+      imageURL = ""
       logging.info('tstream : ' + str(tstream))
       name = tstream['streamname']
       logging.info("Trending stream : " + str(name))
@@ -641,11 +647,12 @@ class TrendingPage(webapp2.RequestHandler):
         lastnewpicdate = 'N/A'
       else:
         lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+        imageURL = imagelist[0]['imagefileurl']
       logging.info("Treading stream creation date : " + lastnewpicdate)
 
       trendingStreamsResult['streamnames'].append(name)
-      #trendingStreamsResult['dates'].append(lastnewpicdate)
       trendingStreamsResult['imagenums'].append(numpics)
+      trendingStreamsResult['image'].append(imageURL)
     logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
     trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
     logging.info('Trending Stream table html :' + str(trendingStreamHtml))
