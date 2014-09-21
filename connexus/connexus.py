@@ -348,27 +348,27 @@ def addcoverurl(coverurl,streamname):
     
 
 def processSubscriberList(subdata):
-	#Gets valid emails from form data for subscribers
+  #Gets valid emails from form data for subscribers
     subdata = subdata.strip()
     subdata = subdata.split(',')
     subscriberlist = list()
     for subscriber in subdata:
-    	subscriber = subscriber.strip()
-    	if(re.match(r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$',subscriber)):
-    		logging.info('Found valid email')
-    		subscriberlist.append(subscriber)
+      subscriber = subscriber.strip()
+      if(re.match(r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$',subscriber)):
+        logging.info('Found valid email')
+        subscriberlist.append(subscriber)
     return subscriberlist
 
 def processTagList(tagdata):
-	#Gets tags from form data, probably need better valid tag checking
-	tagdata = tagdata.strip()
-	tagdata = tagdata.split(',')
-	taglist = list()
-	for tag in tagdata:
-		tag = tag.strip()
-		if(re.match('^#.*',tag)):
-			taglist.append(tag)
-	return taglist
+  #Gets tags from form data, probably need better valid tag checking
+  tagdata = tagdata.strip()
+  tagdata = tagdata.split(',')
+  taglist = list()
+  for tag in tagdata:
+    tag = tag.strip()
+    if(re.match('^#.*',tag)):
+      taglist.append(tag)
+  return taglist
 
 def create_file(filename, file, contenttype):
   logging.info('Creating file %s\n' % filename)
@@ -413,40 +413,51 @@ class ViewPageHandler(webapp2.RequestHandler):
   def post(self):
     logging.info('Test View page handler:')
     try:
-      imagefile = self.request.get('Filename')
+      streamname = self.request.get('Streamname')
+      streamname = streamname.split("'s Str")[0]
+      logging.info("Streamname is: " + str(streamname))
       morepics = self.request.get('More_Pictures')
       logging.info('Morepics is: ' + str(morepics))
       upload = self.request.get('Upload')
       logging.info('Upload is: ' + str(upload))
       subscribe = self.request.get('Subscribe')
       logging.info("Subscribe is: " + str(subscribe))
-      filename = self.request.params["Filename"].filename 
-      picdata = imagefile.encode("base64")
-      logging.info("filename: " + str(filename))
-      (name,extension) = os.path.splitext(filename)
-      contenttype = ""
-      extension = extension.lower()
-      if extension == '.gif':
-        contenttype = 'image/gif'
-      elif extension == '.jpg':
-        contenttype = 'image/jpeg'
-      elif extension == '.png':
-        contenttype = 'image/png'
-      else:
-        contenttype = None
-      logging.info("Content type is: " + str(contenttype))
-      if not contenttype == None:
-        streamname = self.request.get('Streamname')
-        streamname = streamname.split("'s Str")[0]
-        logging.info("Streamname is: " + str(streamname))
-        comments = self.request.get('Comments')
-        mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
-        url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
+      if upload == 'Upload':
+        logging.info('Got into upload?')
+        imagefile = self.request.get('Filename')
+        filename = self.request.params["Filename"].filename 
+        picdata = imagefile.encode("base64")
+        logging.info("filename: " + str(filename))
+        (name,extension) = os.path.splitext(filename)
+        contenttype = ""
+        extension = extension.lower()
+        if extension == '.gif':
+          contenttype = 'image/gif'
+        elif extension == '.jpg':
+          contenttype = 'image/jpeg'
+        elif extension == '.png':
+          contenttype = 'image/png'
+        else:
+          contenttype = None
+        logging.info("Content type is: " + str(contenttype))
+        if not contenttype == None:
+          comments = self.request.get('Comments')
+          mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
+          url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
+          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+          logging.info("upload image result: " + str(result.content))
+        else:
+          logging.info('Unrecognized image type.')
+        self.redirect('/MgmtPage')
+      elif (str(subscribe) == 'Subscribe'):
+        logging.info("Subscribe is: " + str(subscribe))
+        user = str(users.get_current_user())
+        mydata = json.dumps({"subuser": user, "streamname": streamname})
+        url = 'http://' + AP_ID_GLOBAL + '/SubscribeStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-        logging.info("upload image result: " + str(result.content))
-      else:
-        logging.info('Unrecognized image type.')
-      self.redirect('/MgmtPage')
+        self.redirect('/MgmtPage')
+      elif (str(morepics) == 'More_Pictures'):
+        logging.info('View more pictures...TODO')
     except:
       logging.info("Problem uploading file")
       self.redirect('/Error')
@@ -487,32 +498,24 @@ class MgmtPage(webapp2.RequestHandler):
     myupdatelist2 = {'streamnames':list(),'dates':list(),'views':list(),'imagenums':list()}
     for ownstreams in streamsiown:
       name = ownstreams['streamname']
-      logging.info("This stream name is: " + str(name))
       imagelist = ownstreams['imagelist']
-      logging.info('This stream imagelist: ' + str(imagelist))
       numpics = len(imagelist)
-      logging.info('This stream imagelist length' + str(numpics))
       if len(imagelist) == 0:
         lastnewpicdate = 'N/A'
       else:
         lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-      logging.info("Creation date: " + lastnewpicdate)
       myupdatelist['streamnames'].append(name)
       myupdatelist['dates'].append(lastnewpicdate)
       myupdatelist['imagenums'].append(numpics)
     logging.info('My update list to generate html rows: ' + str(myupdatelist))
     for ownstreams in streamsisubscribe:
       name = ownstreams['streamname']
-      logging.info("This stream name is: " + str(name))
       imagelist = ownstreams['imagelist']
-      logging.info('This stream imagelist: ' + str(imagelist))
       numpics = len(imagelist)
-      logging.info('This stream imagelist length' + str(numpics))
       if len(imagelist) == 0:
         lastnewpicdate = 'N/A'
       else:
         lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-      logging.info("Creation date: " + lastnewpicdate)
       myviews = ownstreams['viewdatelistlength']
       myupdatelist2['streamnames'].append(name)
       myupdatelist2['dates'].append(lastnewpicdate)
@@ -521,11 +524,8 @@ class MgmtPage(webapp2.RequestHandler):
     logging.info('My update list to generate html rows: ' + str(myupdatelist2))
     mystreamshtml = generatestreamsiownlist(myupdatelist)
     mysubscribeshtml = generatestreamssubscribed(myupdatelist2)
-    logging.info("Owned streams: " + str(streamsiown))
-    logging.info("Subscribed streams" + str(streamsisubscribe))
     if user:
       updatedheader = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL))
-      logging.info("Updated header: " + str(updatedheader))
       fullhtml = updatedheader + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
       self.response.write(fullhtml)
     else:
@@ -694,9 +694,9 @@ class Login(webapp2.RequestHandler):
 
 
 class GetStreamData(webapp2.RequestHandler):
-	#Gets create stream data from the HTML page
-	#Creats the json object with the streamname, subscriber emails, and tags
-	#and call Create stream web service and send the json data
+  #Gets create stream data from the HTML page
+  #Creats the json object with the streamname, subscriber emails, and tags
+  #and call Create stream web service and send the json data
    def post(self):
         user  = str(users.get_current_user())
         logging.info('Current user: ' + str(user))
@@ -1147,23 +1147,19 @@ class HandleMgmtForm(webapp2.RequestHandler):
     logging.info("Current user is: " + str(user))
     if not user:
       self.redirect(users.create_login_url(self.request.uri))
-    logging.info("Management form data: " + str(self.request))
     delchecked = cgi.escape(self.request.get('delete_checked'))
     unsubchecked = cgi.escape(self.request.get('unsubscribe_checked'))
     view = cgi.escape(self.request.get('view'))
-    logging.info('View Retrieved: ' + str(view))
     streamnames = list()
     checkboxid = ""
     try:
       #get name of stream to delete
       if not str(view) == "":
-        logging.info('We need to switch to view page')
         url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
         mydata = json.dumps({'streamname':str(view)})
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
         self.response.write(str(result.content))
         viewhtml = str(result.content)
-        logging.info(viewhtml)
       elif delchecked == 'Delete':
         logging.info('Delete was checked')
         checkboxid = 'own'
@@ -1175,7 +1171,6 @@ class HandleMgmtForm(webapp2.RequestHandler):
         streamnames = self.request.get_all(checkboxid)
       except:
         streamnames = self.request.get(checkboxid)
-      logging.info("From checkbox we got streams: " + str(streamnames))
       if not str(view) == "":
         logging.info('This was a view stream call')
       elif delchecked == 'Delete':
@@ -1187,7 +1182,6 @@ class HandleMgmtForm(webapp2.RequestHandler):
         url = 'http://' + AP_ID_GLOBAL + '/UnsubscribeStreams'
         logging.info('Set url for unsubscribe')
         for substream in streamnames:
-          logging.info('Looping through streams: ' + str(substream))
           mydata = json.dumps({'unsubuser':str(user),'streamname':str(substream)})
           result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
           logging.info(str(result.content))
@@ -1314,12 +1308,12 @@ class GetMostViewedStreams(webapp2.RequestHandler):
     logging.info("Exiting GetMostViewedStreams handler")
 
 class Report(webapp2.RequestHandler):
-	def post(self):
-		data = json.loads(self.request.body)
-		logging.info('this is what Im looking for: ' + str(data))
-		payload = {'errorcode':1}
-		result = json.dumps(payload)
-		self.response.write(result)
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('this is what Im looking for: ' + str(data))
+    payload = {'errorcode':1}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 class DeleteAllImages(webapp2.RequestHandler):
   def post(self):
