@@ -85,7 +85,7 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="True" /></></body></html>
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
 <h3>Streams I subscribe to</h3>
 
 <style type="text/css">
@@ -106,7 +106,7 @@ MGMT_PAGE_HTML = """<h3>Streams I own</h3>
 </table>
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="True" /></></body></html>"""
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe" /></></body></html>"""
 
 EMAIL_HTML = """\
 <html>
@@ -877,7 +877,7 @@ class UploadImage(webapp2.RequestHandler):
 
 class Error(webapp2.RequestHandler):
   def get(self):
-    self.request.write('Reached error page.')
+    self.request.write(HEADER_HTML + "<br><br><br> Create page coming soon</body></html>")
 
 class ViewAllStreams(webapp2.RequestHandler):
   def post(self):
@@ -960,10 +960,10 @@ class HandleMgmtForm(webapp2.RequestHandler):
     streamnames = list()
     try:
       #get name of stream to delete
-      if delchecked:
+      if delchecked == 'Delete':
         logging.info('Delete was checked')
         checkboxid = 'own'
-      if unsubchecked:
+      if unsubchecked == 'Unsubscribe':
         logging.info('Unsub was checked')
         checkboxid = 'sub'
       logging.info("This checkbox id is: " + checkboxid)
@@ -972,18 +972,20 @@ class HandleMgmtForm(webapp2.RequestHandler):
       except:
         streamnames = self.request.get(checkboxid)
       logging.info("From checkbox we got streams: " + str(streamnames))
-      if delchecked:
+      if delchecked == 'Delete':
         url = 'http://' + AP_ID_GLOBAL + '/DeleteStreams'
         mydata = json.dumps({'streamnamestodelete':streamnames})
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-      elif unsubchecked:
+      elif unsubchecked == 'Unsubscribe':
         url = 'http://' + AP_ID_GLOBAL + '/UnsubscribeStreams'
         logging.info('Set url for unsubscribe')
         for substream in streamnames:
           logging.info('Looping through streams: ' + str(substream))
           mydata = json.dumps({'unsubuser':str(user),'streamname':str(substream)})
           result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-          logging.info(str(result))
+          logging.info(str(result.content))
+          if not (str(result.content) == "{'errorcode':0}"):
+            self.redirect('/Error')
       self.redirect('/MgmtPage')
     except:
       self.redirect('/Error')
