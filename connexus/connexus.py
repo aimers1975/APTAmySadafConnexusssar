@@ -36,7 +36,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -206,6 +206,13 @@ TRENDING_PAGE_STYLE = """\
     float:left;
     padding:10px;    
 }
+#aside {
+    line-height:30px;
+    height:300px;
+    width:250px;
+    float:right;
+    padding:5px; 
+}
 </style>
 """
 
@@ -230,11 +237,11 @@ TRENDING_REPORT_HTML = """\
 <div id="aside">
   <form action="/cronSettings" method="post">
     <br>
+    <p> Email Trending Report </p>
     <input type="checkbox" name="cronRate" value="No"> No reports<br>
     <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
     <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
     <input type="checkbox" name="cronRate" value="Day"> Every day<br>
-    <p> Email Trending Report </p>
     <input type="submit" value="Update Rate">
   </form>
 </div>
@@ -330,7 +337,7 @@ def generatetrendingstreams(trendinglist):
   END_ITEM_HTML = '</td>'
   START_IMG_SRC_TAG = '<img src="'
   #END_IMG_SRC_TAG = '" width="20%"/>'
-  END_IMG_SRC_TAG = '"/>'
+  END_IMG_SRC_TAG = '" alt="Image Unavailable" width="300" height="214"/>'
   htmlstringfinal = ""
   length = 3
   for x in range(0,length):
@@ -343,7 +350,7 @@ def generatesearchedstreams(searchlist):
   END_ITEM_HTML = '</td>'
   START_IMG_SRC_TAG = '<img src="'
   #END_IMG_SRC_TAG = '" width="20%"/>'
-  END_IMG_SRC_TAG = '"/>'
+  END_IMG_SRC_TAG = '" alt="Image Unavailable" width="300" height="214"/>'
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
