@@ -65,8 +65,9 @@ CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form ac
 </html>"""
 
 
-HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
-<body><head><h1>Connex.us</h1></head>
+HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
+<div id="form_container"><form>            
+<head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Style Test</title>
@@ -76,6 +77,7 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 .first { border-left: none; padding-left: 0; }
 </style>
 </head>
+<div>
 <body>
 <!--Need to add links for pages once done-->
 <ul id="list">
@@ -196,13 +198,12 @@ TRENDING_REPORT_HTML = """\
 
 SEARCH_STREAMS_HTML = """\
 <div id="aside">
-  <form action="/SearchStreams" method="post">
-    <input name="searchString" placeholder="Stream Name:">
-    <input type="submit" value="Search">
-  </form>
+   <form action="/SearchStreams" method="post">
+     <input name="searchString" placeholder="Stream Name:">
+     <input type="submit" value="Search">
+   </form>
 </div>
 """
-
 
 SEARCH_RESULT_HTML = """\
 <div id="article">
@@ -470,7 +471,9 @@ class SearchPage(webapp2.RequestHandler):
   def get(self):
     #Retrieve top 3 trending streams
     url = 'http://' + AP_ID_GLOBAL + '/SearchStreams'
+    logging.info('request: ' + str(self.request))
     searchString = self.request.get('searchString')
+    logging.info('searchString is :' + searchString)
 
     if searchString == "":
       logging.info('searchString is null')
@@ -555,39 +558,7 @@ class SocialPage(webapp2.RequestHandler):
 
 class ViewAllStreamsPage(webapp2.RequestHandler):
   def get(self):
-    url = 'http://' + AP_ID_GLOBAL + '/ViewAllStreams'
-    params = json.dumps({})
-    logging.info('URL for ViewAllStreams is : ' + str(url))
-    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-    logging.info('ViewAllStreams Result is: ' + str(result.content))
-    resultobj = json.loads(result.content)
-    allStreams = resultobj['streamlist']
-    allCoverUrls = resultobj['coverurls']
-    logging.info('ViewAllStreams from service: ' + str(allStreams))
-
-    #get list of top three streams
-    allStreamsResult = {'streamnames':list(),'coverurls':list()}
-    for tstream in allStreams:
-      logging.info('tstream : ' + str(tstream))
-      name = tstream['streamname']
-      logging.info("Stream : " + str(name))
-      imagelist = tstream['imagelist']
-      logging.info("Stream image list : " + str(imagelist))
-      numpics = len(imagelist)
-      logging.info('This stream imagelist: ' + str(numpics))
-      if len(imagelist) == 0:
-        lastnewpicdate = 'N/A'
-      else:
-        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-      logging.info("Stream creation date : " + lastnewpicdate)
-
-      allStreamsResult['streamnames'].append(name)
-      #trendingStreamsResult['dates'].append(lastnewpicdate)
-      allStreamsResult['imagenums'].append(numpics)
-    logging.info('All Streams :' + str(allStreamsResult))
-    allStreamHtml = generateallstreams(allStreamsResult)
-    logging.info('All Stream table html :' + str(allStreamHtml))
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (ALL_STREAMS_HTML %(allStreamHtml)) + "</body></html>"
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> View All Streams page coming soon</body></html>"
     self.response.write(fullhtml)
 
 #Sample function, we may not use
