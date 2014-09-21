@@ -93,19 +93,17 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
 <input id="Streamname" name="Streamname" type="text" input style="font-size:25px" readonly="readonly" value="%s's Stream"><br>
 <div><table class="tg"><tr>
-    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
-    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
-    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
+%s
     <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
   </tr>
 </table></div>
+<input id="Pagerange" name="Pagerange" type="text" input style="font-size:10px" readonly="readonly" value="Showing images: [%s-%s]"><br>
 <div><br><br><table class="tg"><label class="description" for="Comments">Comments</label><br><tr><textarea id="Comments" name="Comments" class="element textarea 
 
 medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
 <tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td></tr></table><br><br></div>
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>"""
-
 
 
 S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
@@ -282,7 +280,7 @@ ALL_STREAMS_HTML = """\
 """
 
 def olderthanhour(checktimestring):
-  hourago = datetime.now() - timedelta(minutes=1)
+  hourago = datetime.now() - timedelta(minutes=30)
   if(checktimestring < str(hourago)):
     logging.info("checktimestring: " + str(checktimestring) + " hour ago: " + str(hourago))
     logging.info("returning true")
@@ -291,6 +289,15 @@ def olderthanhour(checktimestring):
     logging.info("checktimestring: " + str(checktimestring) + " hour ago: " + str(hourago))
     logging.info("returning false")
     return False
+
+def generateimagelinks(urllist):
+  BEGIN = '<th class="tg-031e"><img src="'
+  END = '" alt="Image Unavailable" width="250" height="225"></th>'
+  htmlstringfinal = ""
+  length = len(urllist)
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN + urllist[x] + END
+  return htmlstringfinal
 
 def generatestreamsiownlist(updatelist):
   START_CHECKBOX = '<td class="tg-031e"><input id="own" name="own" class="element checkbox" type="checkbox" value="'
@@ -416,36 +423,45 @@ class ViewPageHandler(webapp2.RequestHandler):
       streamname = self.request.get('Streamname')
       streamname = streamname.split("'s Str")[0]
       logging.info("Streamname is: " + str(streamname))
+      oldpagerange = self.request.get('Pagerange')
+      temp1 = oldpagerange.split('Showing images: [')[1]
+      temp2 = temp1.split('-')
+      start = temp2[0]
+      end = temp2[1].split(']')[0]
       morepics = self.request.get('More_Pictures')
       logging.info('Morepics is: ' + str(morepics))
       upload = self.request.get('Upload')
       logging.info('Upload is: ' + str(upload))
       subscribe = self.request.get('Subscribe')
       logging.info("Subscribe is: " + str(subscribe))
-      if upload == 'Upload':
+      imagelinks = ""
+      if (str(upload) == 'Upload'):
         logging.info('Got into upload?')
-        imagefile = self.request.get('Filename')
-        filename = self.request.params["Filename"].filename 
-        picdata = imagefile.encode("base64")
-        logging.info("filename: " + str(filename))
-        (name,extension) = os.path.splitext(filename)
-        contenttype = ""
-        extension = extension.lower()
-        if extension == '.gif':
-          contenttype = 'image/gif'
-        elif extension == '.jpg':
-          contenttype = 'image/jpeg'
-        elif extension == '.png':
-          contenttype = 'image/png'
-        else:
-          contenttype = None
-        logging.info("Content type is: " + str(contenttype))
-        if not contenttype == None:
-          comments = self.request.get('Comments')
+        try:
+          imagefile = self.request.get('Filename')
+          filename = self.request.params["Filename"].filename 
+          picdata = imagefile.encode("base64")
+          logging.info("filename: " + str(filename))
+          (name,extension) = os.path.splitext(filename)
+          contenttype = ""
+          extension = extension.lower()
+          if extension == '.gif':
+            contenttype = 'image/gif'
+          elif extension == '.jpg':
+            contenttype = 'image/jpeg'
+          elif extension == '.png':
+            contenttype = 'image/png'
+          else:
+            contenttype = None
+          logging.info("Content type is: " + str(contenttype))
+          if not contenttype == None:
+            comments = self.request.get('Comments')
           mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
           url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
           result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
           logging.info("upload image result: " + str(result.content))
+        except:
+          logging.info("No file selected error")
         else:
           logging.info('Unrecognized image type.')
         self.redirect('/MgmtPage')
@@ -456,8 +472,39 @@ class ViewPageHandler(webapp2.RequestHandler):
         url = 'http://' + AP_ID_GLOBAL + '/SubscribeStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
         self.redirect('/MgmtPage')
-      elif (str(morepics) == 'More_Pictures'):
+      elif (str(morepics) == 'More Pictures'):
         logging.info('View more pictures...TODO')
+        newend = int(end)
+        newstart = int(start)
+        if ((int(end)-int(start)) >= 2):
+          newstart = int(start) + 3
+          newend = int(end) + 3
+        else:
+          newend = 2
+          newstart = 0
+        mydata = json.dumps({"pagerange": [newstart,newend], "streamname": streamname})
+        logging.info(str(mydata))
+        url = 'http://' + AP_ID_GLOBAL + '/ViewStream'
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+        jsonresult = json.loads(result.content)
+        if jsonresult['pagerange'] == list():
+          logging.info("That range gave back an empty list, starting at beginning of stream")
+          mydata = json.dumps({"pagerange": [0,2], "streamname": streamname})
+          url = 'http://' + AP_ID_GLOBAL + '/ViewStream'
+          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30) 
+          jsonresult = json.loads(result.content)
+          if jsonresult['pagerange'] == list():
+            newstart = 0
+            newend = 0
+          else:
+            newstart = jsonresult['pagerange'][0]
+            newend = jsonresult['pagerange'][1]
+            imagelinks = generateimagelinks(jsonresult['picurls'])                
+        else:
+          newstart = jsonresult['pagerange'][0]
+          newend = jsonresult['pagerange'][1]
+          imagelinks = generateimagelinks(jsonresult['picurls']) 
+        self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % (str(streamname),imagelinks,str(newstart),str(newend))))
     except:
       logging.info("Problem uploading file")
       self.redirect('/Error')
@@ -545,11 +592,20 @@ class ViewPage(webapp2.RequestHandler):
       data = json.loads(self.request.body)
       logging.info('Json data sent to this function: ' + str(data))
       streamname = data['streamname']
+      pagerange = data['pagerange']
+      logging.info('Pagerange: ' + str(pagerange))
+      start = int(pagerange[0])
+      end = int(pagerange[1])
+      logging.info('Start is: ' + str(start) + ' End is: ' + str(end))
       url = 'http://' + AP_ID_GLOBAL + '/ViewStream'
-      mydata = json.dumps({'streamname':streamname,'pagerange':[0,0]})
+      mydata = json.dumps({'streamname':streamname,'pagerange':[start,end]})
       result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
+      jsonresult = json.loads(result.content)
+      imagelinks = generateimagelinks(jsonresult['picurls'])
       logging.info("ViewStream call result: " + str(result.content))
-      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % str(streamname)))
+      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % (str(streamname),imagelinks, str(pagerange[0]),str(pagerange[1]))))
+      logging.info('HTML written')
+
 
 
 class SearchPage(webapp2.RequestHandler):
@@ -846,14 +902,11 @@ class ManageStream(webapp2.RequestHandler):
 
     for thisstream in rawuserstreams:
       thisimagelist = thisstream.imagelist
-      logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
         currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
-        logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
-      logging.info('New current stream from db: ' + str(currentstream))
       thisuserstreams.append(currentstream)
 
     logging.info("Starting fetch streams subscribed to by: " + str(userid))
@@ -862,20 +915,16 @@ class ManageStream(webapp2.RequestHandler):
     rawusersubscriptionlist = list()
     for thisstream in allstreams:
       subusers = thisstream.streamsubscribers
-      logging.info("Stream: " + str(thisstream) + " has subscribers: " + str(subusers))
       if subusers.count(userid) > 0:
         rawusersubscriptionlist.append(thisstream)
 
     for thisstream in rawusersubscriptionlist:
       thisimagelist = thisstream.imagelist
-      logging.info('This imagelist from db: ' + str(thisimagelist))
       newimagelist = list()
       for image in thisimagelist:
         currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
-        logging.info('Build image object from db: ' + str(currentimage))
         newimagelist.append(currentimage)
       currentstream = {'streamname':thisstream.streamname,'creationdate':thisstream.creationdate,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl,'imagelist':newimagelist}
-      logging.info('New current stream from db: ' + str(currentstream))
       thisusersubscriptionlist.append(currentstream)
 
     logging.info("This users streams: " + str(thisuserstreams))
@@ -892,36 +941,32 @@ class ViewStream(webapp2.RequestHandler):
     streamname = data['streamname']
     pagerange = data['pagerange']
     try:
-      logging.info('Check if stream exists')
       present_query = Stream.query(Stream.streamname == streamname)
       existsstream = present_query.get()
       logging.info('Query returned: ' + str(existsstream))
 
       removelist = list()
-
+      #only increase view if first view where requesting page 0
+      if int(pagerange[0]) == 0:
       #get viewlist for this stream and remove stale values
-      existsstreamdatelist = existsstream.viewdatelist
-      logging.info('view date list from datastore is: ' + str(existsstreamdatelist))
+        existsstreamdatelist = existsstream.viewdatelist
 
-      for date in existsstreamdatelist:
-        logging.info("Calling older than hour with input: " + str(date))
-        if(olderthanhour(date)):
-          logging.info("Removing item.")
-          removelist.append(date)
-      for date in removelist:    
-        existsstreamdatelist.remove(date)
-        try:
-          existsstreamdatelist.remove(date)
-        except:
-          logging.info('Date not found in datastore list: ' + str(date))
+      #TODO: Temporarily commenting out stale date value calculations
+      #for date in existsstreamdatelist:
+      #  if(olderthanhour(date)):
+      #    logging.info("Removing item.")
+      #    removelist.append(date)
+      #for date in removelist:    
+      #  existsstreamdatelist.remove(date)
+      #  try:
+      #    existsstreamdatelist.remove(date)
+      #  except:
+      #    logging.info('Date not found in datastore list: ' + str(date))
 
-      logging.info('Past for loops for datelist')
-
-      existsstreamdatelist.append(str(datetime.now()))
-      existsstream.viewdatelistlength = len(existsstreamdatelist)
-      existsstream.viewdatelist = existsstreamdatelist
-      logging.info('existsstreamdatelist: ' + str(existsstreamdatelist))
-      existsstream.put()
+        existsstreamdatelist.append(str(datetime.now()))
+        existsstream.viewdatelistlength = len(existsstreamdatelist)
+        existsstream.viewdatelist = existsstreamdatelist
+        existsstream.put()
  
       images_ds = existsstream.imagelist
       logging.info('Images list ds: ' + str(images_ds))
@@ -929,16 +974,16 @@ class ViewStream(webapp2.RequestHandler):
       #TODO - There is a bug here, if the range sent is too long we probably want to send
       # as many as we can, and right now we send nothing
       start = int(pagerange[0])
-      logging.info('Pagerange start: ' + str(start))
       end = int(pagerange[1])
-      logging.info('Pagerange end: ' + str(end))
       logging.info('Length of images_ds is: ' + str(len(images_ds)))
-      if ((start > -1) and ((end+1) <= len(images_ds))):
+      if end >= len(images_ds):
+        end = len(images_ds)-1
+      pagerange = [start,end]
+      if((start > -1) and (end >=start) and (end > -1)):
         images_ds = images_ds[start:end+1]
         logging.info('Images_ds: ' + str(images_ds))
         urls = list()
         for image in images_ds:
-          logging.info("This image is: " + str(image) + ' and imageurl is: ' + str(image.imagefileurl))
           urls.append(image.imagefileurl)
         payload = {'picurls': urls, 'pagerange':pagerange}
       else:
@@ -1018,6 +1063,7 @@ class UploadImage(webapp2.RequestHandler):
     #create an ID for the image - may not need this....
     imageid = str(uuid.uuid1())
     bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+    logging.info("My bucket name is: " + str(bucket_name))
     #create location string for image   
     bucket = '/' + bucket_name
     filename = bucket + '/' + streamname + '/' + imageid
@@ -1156,10 +1202,9 @@ class HandleMgmtForm(webapp2.RequestHandler):
       #get name of stream to delete
       if not str(view) == "":
         url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
-        mydata = json.dumps({'streamname':str(view)})
+        mydata = json.dumps({'streamname':str(view),'pagerange':[0,2]})
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
         self.response.write(str(result.content))
-        viewhtml = str(result.content)
       elif delchecked == 'Delete':
         logging.info('Delete was checked')
         checkboxid = 'own'
