@@ -256,8 +256,10 @@ SEARCH_RESULT_HTML = """\
 .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
 .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
 </style>
-<table>
+<table width="500" cellpadding="5">
+<tr>
 %s
+</tr>
 </table>
 <div>
 """
@@ -324,7 +326,7 @@ def generatetrendingstreams(trendinglist):
 
 def generatesearchedstreams(searchlist):
   BEGIN = '<tr>'
-  START_ITEM_HTML = '<td class="tg-031e">'
+  START_ITEM_HTML = '<td align="center" valign="center">'
   END_ITEM_HTML = '</td>'
   START_IMG_SRC_TAG = '<img src="'
   #END_IMG_SRC_TAG = '" width="20%"/>'
@@ -332,7 +334,7 @@ def generatesearchedstreams(searchlist):
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + searchlist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + searchlist['streamnames'][x] + END_ITEM_HTML
   return htmlstringfinal
 
 def generateallstreams(allStreamslist):
