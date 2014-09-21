@@ -1,8 +1,8 @@
 from google.appengine.api import users
 from google.appengine.api import urlfetch
-from google.appengine.api import images
+from google.appengine.api import files, images
 from google.appengine.ext import db
-from google.appengine.ext import blobstore
+from google.appengine.ext import blobstore, deferred
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
 from datetime import datetime,timedelta
@@ -18,6 +18,7 @@ from urlparse import urlparse
 import re
 import os
 import uuid
+import base64
 
 #Probably not necessary to change default retry params, but here for example
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
@@ -89,19 +90,17 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul>"""
 
-VIEW_STREAM_HTML = """</div><div><table class="tg"><tr>
+VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg"><tr>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
     <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
-    <th class="tg-031e"><class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="More_Pictures" class="button_text" type="submit" 
-name="More_Pictures" value="More Pictures" /></th>
+    <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
   </tr>
 </table></div>
-<div><br><br><table class="tg"><tr><th class="tg-031e">File Name</th><th class="tg-031e"><input id="Filename" name="Filename" class="element file" 
-type="file"/></textarea></th></tr>
+<div><br><br><table class="tg"><tr><th class="tg-031e">File Name</th><th class="tg-031e"><input id="Filename" name="Filename" type="file"/></textarea></th></tr>
 <tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td><td class="tg-031e">Upload An 
 Image</td></tr></table><br><br></div>
-<class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
+<class="buttons"><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>"""
 
 
@@ -407,6 +406,30 @@ class MainPage(webapp2.RequestHandler):
     else:
       self.redirect(users.create_login_url(self.request.uri))
 
+class ViewPageHandler(webapp2.RequestHandler):
+  def post(self):
+    logging.info('Test View page handler:')
+    try:
+      imagefile = self.request.get('Filename')
+      picdata = imagefile.encode("base64")
+      logging.info("filename: " + str(imagefile))
+      streamname = "amytest"
+      comments = "This is my comment"
+      filename = "realupload.jpg"
+      mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": "image/jpeg", "comments": comments, "filename": filename})
+      url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
+      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+      logging.info("upload image result: " + str(result.content))
+      self.redirect('/MgmtPage')
+
+    except:
+      form = cgi.FieldStorage()
+      filedata = form['Filename']
+      logging.info("Filedata: " + str(filedata))
+      if filedata.file:
+        thisfile = filedata.file.read()
+        logging.info('This file is:' + str(thisfile))
+
 class Image(ndb.Model):
   imageid = ndb.StringProperty()
   imagefilename = ndb.StringProperty()
@@ -503,7 +526,7 @@ class ViewPage(webapp2.RequestHandler):
       streamname = data['streamname']
       url = 'http://' + AP_ID_GLOBAL + '/ViewStream'
       mydata = json.dumps({'streamname':streamname,'pagerange':[0,0]})
-      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
       logging.info("ViewStream call result: " + str(result.content))
       self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + VIEW_STREAM_HTML)
 
@@ -624,13 +647,11 @@ class GCSServingHandler(blobstore_handlers.BlobstoreDownloadHandler):
 #Sample code we may not use
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
-    upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
+    upload_files = self.get_uploads('Filename')  # 'file' is file upload field in the form
     logging.info('Upload file from get_uploads is: ' + str(upload_files))
     blob_info = upload_files[0]
     logging.info('Blob info is: ' + str(blob_info))
-    redirectstring = '/serve/' + str(blob_info.key())
-    logging.info('Redirecting, Redirect url is: ' + redirectstring) 
-    self.redirect(redirectstring)
+
 
 #sample code we may not
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
@@ -649,6 +670,7 @@ class Login(webapp2.RequestHandler):
     password = cgi.escape(self.request.get('password'))
     logging.info("Login is: " + str(login))
     logging.info("password is: " + str(password))
+
 
 class GetStreamData(webapp2.RequestHandler):
 	#Gets create stream data from the HTML page
@@ -1426,6 +1448,7 @@ application = webapp2.WSGIApplication([
     ('/MgmtPage', MgmtPage),
     ('/CreatePage', CreatePage),
     ('/ViewPage', ViewPage),
+    ('/ViewPageHandler', ViewPageHandler),
     ('/SearchPage', SearchPage),
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
