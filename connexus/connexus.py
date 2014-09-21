@@ -1023,9 +1023,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
   def post(self):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
-    if user:
-      self.response.write(MAIN_PAGE_HTML)
-    else:
+    if not user:
       self.redirect(users.create_login_url(self.request.uri))
     logging.info("Management form data: " + str(self.request))
     delchecked = cgi.escape(self.request.get('delete_checked'))
