@@ -1178,6 +1178,31 @@ class UnsubscribeStreams(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+class SubscribeStream(webapp2.RequestHandler):
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('Json data for this call: ' + str(data))
+    user = data['subuser']
+    streamname = data['streamname']
+    logging.info('Check if stream exists')
+    present_query = Stream.query(Stream.streamname == streamname)
+    existsstream = present_query.get()
+    logging.info('Query returned: ' + str(existsstream))
+    userlist = existsstream.streamsubscribers
+    payload = {}
+    #TODO: Need to handle case where stream doesn't exist
+    try:
+      userlist.append(user)
+      logging.info("updated subscriberlist is: " + str(userlist))
+      existsstream.streamsubscribers = userlist
+      existsstream.put()
+      payload = {'errorcode':0}
+    except:
+      payload = {'errorcode':9}
+      logging.info('Subscribe user does not exist.')
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class GetMostViewedStreams(webapp2.RequestHandler):
   def post(self):
     logging.info("Entering GetMostViewedStreams handler")
@@ -1364,6 +1389,7 @@ application = webapp2.WSGIApplication([
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
     ('/ViewAllStreamsPage', ViewAllStreamsPage),
+    ('/SubscribeStream', SubscribeStream),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
