@@ -327,11 +327,12 @@ def generatesearchedstreams(searchlist):
   START_ITEM_HTML = '<td class="tg-031e">'
   END_ITEM_HTML = '</td>'
   START_IMG_SRC_TAG = '<img src="'
+  #END_IMG_SRC_TAG = '" width="20%"/>'
   END_IMG_SRC_TAG = '"/>'
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + searchlist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML + START_IMG_SRC_TAG + "http://storage.googleapis.com/radiant-anchor-696.appspot.com/ssstream5/19d4ca66-41c5-11e4-a256-e58ddd187b13" + END_IMG_SRC_TAG + END_ITEM_HTML
+    htmlstringfinal = htmlstringfinal + BEGIN + START_ITEM_HTML + searchlist['streamnames'][x] + END_ITEM_HTML + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + END_ITEM_HTML
   return htmlstringfinal
 
 def generateallstreams(allStreamslist):
@@ -587,10 +588,12 @@ class SearchPage(webapp2.RequestHandler):
         logging.info('This stream imagelist: ' + str(numpics))
         if len(imagelist) == 0:
           lastnewpicdate = 'N/A'
+          imgString = ""
         else:
           lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-          imgString = imagelist[len(imagelist)-1]['imagefileurl']
+          imgString = imagelist[0]['imagefileurl']
           logging.info('image URL is : ' + str(imgString))
+
           #bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
           #logging.info('bucket_name is : ' + str(bucket_name))
           #gcs_filename = imagelist[len(imagelist)-1]['imageid']
@@ -602,7 +605,7 @@ class SearchPage(webapp2.RequestHandler):
 
         searchedStreamsResult['streamnames'].append(name)
         searchedStreamsResult['imagenums'].append(numpics)
-        searchedStreamsResult['image'].append(imgstring)
+        searchedStreamsResult['image'].append(imgString)
       logging.info('Search returned following Streams :' + str(searchedStreamsResult))
       searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
       length = len(searchedStreamsResult['streamnames'])
