@@ -34,7 +34,7 @@ myimages = list()
 cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -65,7 +65,48 @@ CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form ac
 </html>"""
 
 
-HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
+HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
+<body><head><h1>Connex.us</h1></head>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Style Test</title>
+<style type="text/css">
+#list 
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
+.first { border-left: none; padding-left: 0; }
+</style>
+</head>
+
+<div>
+<body>
+<!--Need to add links for pages once done-->
+<ul id="list">
+<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
+<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
+<li class="horizontal"><a href="http://%s/ViewPage">View</a></li>
+<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
+<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
+<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
+</ul>"""
+
+VIEW_STREAM_HTML = """</div><div><table class="tg"><tr>
+    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
+    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
+    <th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/teststream/4d633d1c-4192-11e4-9422-bd64a46a3d3b" alt="Image Unavailable"></th>
+    <th class="tg-031e"><class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="More_Pictures" class="button_text" type="submit" 
+name="More_Pictures" value="More Pictures" /></th>
+  </tr>
+</table></div>
+<div><br><br><table class="tg"><tr><th class="tg-031e">File Name</th><th class="tg-031e"><input id="Filename" name="Filename" class="element file" 
+type="file"/></textarea></th></tr>
+<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td><td class="tg-031e">Upload An 
+Image</td></tr></table><br><br></div>
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
+</></body></html>"""
+
+
+
+S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form>            
 <head><h1>Connex.us</h1></head>
 <head>
@@ -464,7 +505,7 @@ class ViewPage(webapp2.RequestHandler):
       mydata = json.dumps({'streamname':streamname,'pagerange':[0,0]})
       result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
       logging.info("ViewStream call result: " + str(result.content))
-      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> This is the view for " + str(streamname) + "</body></html>")
+      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + VIEW_STREAM_HTML)
 
 
 class SearchPage(webapp2.RequestHandler):
@@ -477,7 +518,7 @@ class SearchPage(webapp2.RequestHandler):
 
     if searchString == "":
       logging.info('searchString is null')
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
+      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
       self.response.write(fullhtml)
     else:
       logging.info('searchString is not null')
@@ -509,7 +550,7 @@ class SearchPage(webapp2.RequestHandler):
       searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
       length = len(searchedStreamsResult['streamnames'])
       searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
       self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
@@ -547,7 +588,7 @@ class TrendingPage(webapp2.RequestHandler):
     trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
     logging.info('Trending Stream table html :' + str(trendingStreamHtml))
 
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
+    fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
     #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
@@ -642,7 +683,7 @@ class GetStreamData(webapp2.RequestHandler):
         mydata = json.dumps(prejson)
         logging.info('JSON data: ' + str(mydata))
         url = 'http://' + AP_ID_GLOBAL + '/CreateStream'
-        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
         logging.info("Create stream call result: " + str(result.content))
         self.redirect('/MgmtPage')
 
@@ -1076,7 +1117,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
         logging.info('We need to switch to view page')
         url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
         mydata = json.dumps({'streamname':str(view)})
-        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
         self.response.write(str(result.content))
         viewhtml = str(result.content)
         logging.info(viewhtml)
@@ -1097,7 +1138,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
       elif delchecked == 'Delete':
         url = 'http://' + AP_ID_GLOBAL + '/DeleteStreams'
         mydata = json.dumps({'streamnamestodelete':streamnames})
-        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+        result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
         self.redirect('/MgmtPage')
       elif unsubchecked == 'Unsubscribe':
         url = 'http://' + AP_ID_GLOBAL + '/UnsubscribeStreams'
@@ -1105,7 +1146,7 @@ class HandleMgmtForm(webapp2.RequestHandler):
         for substream in streamnames:
           logging.info('Looping through streams: ' + str(substream))
           mydata = json.dumps({'unsubuser':str(user),'streamname':str(substream)})
-          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
+          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
           logging.info(str(result.content))
           if not (str(result.content) == "{'errorcode':0}"):
             self.redirect('/Error')
