@@ -342,7 +342,7 @@ def generatesearchedstreams(searchlist):
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + searchlist['streamnames'][x] + END_ITEM_HTML
+      htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + searchlist['streamnames'][x] + END_ITEM_HTML
   return htmlstringfinal
 
 def generateallstreams(allStreamslist):
@@ -1159,6 +1159,14 @@ class ViewAllStreams(webapp2.RequestHandler):
     self.response.write(result)
 
 class SearchStreams(webapp2.RequestHandler):
+  def alreadyExists(self, resultList, newItem):
+    for item in resultList:
+      #logging.info('Looking at streamname: ' + str(item['streamname']))
+      if newItem.streamname == item['streamname']:
+        #logging.info('Found')
+        return True
+    return false
+
   def convertStreamObjToList(self, streamObj):
     streamObjList = streamObj.imagelist
     #logging.info('Image list from Stream object : ' + str(streamObjList))
@@ -1167,7 +1175,7 @@ class SearchStreams(webapp2.RequestHandler):
       #logging.info('img is : ' + str(img))
       imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
       imageList.append(imgObjList)
-    logging.info('imageList : ' + str(imageList))
+    #logging.info('imageList : ' + str(imageList))
     streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':imageList}
     return streamList
 
@@ -1199,17 +1207,17 @@ class SearchStreams(webapp2.RequestHandler):
       tagList = streamItem.taglist
       for tag in tagList:
         if streamFilter in tag:
-          searchResultList.append(self.convertStreamObjToList(streamItem))
-          #logging.info('Stream found with tag match: ' + str(streamItem))
+          #if stream is not already in searchResultList then add it
+          if self.alreadyExists(searchResultList, streamItem):
+            logging.info('Stream ' + str(streamItem) + 'has been already found.')
+          else:
+            searchResultList.append(self.convertStreamObjToList(streamItem))
+            #logging.info('Stream found with tag match: ' + str(streamItem))
 
     logging.info("SearchResultList: " + str(searchResultList))
 
     result = json.dumps(searchResultList)
     #payload = {'errorcode':1}
-    #result = json.dumps(payload)
-    #self.response.write('<html><body>')
-    #self.response.write('Allstreamsforsort: ' + str(result))
-    #self.response.write('</body></html>')
     self.response.write(result)
     logging.info('Exiting SerachStreams Handler')
 
