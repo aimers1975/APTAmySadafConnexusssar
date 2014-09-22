@@ -108,8 +108,8 @@ medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filen
 
 
 S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
-<div id="form_container"><form>            
-<head><h1>Connex.us</h1></head>
+<div id="form_container"><form><div class="form_description"></div>            
+<body><head><h1>Connex.us</h1></head>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>Style Test</title>
@@ -119,7 +119,7 @@ S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 .first { border-left: none; padding-left: 0; }
 </style>
 </head>
-<div>
+</div>
 <body>
 <!--Need to add links for pages once done-->
 <ul id="list">
@@ -235,7 +235,6 @@ TRENDING_STREAMS_HTML = """\
 
 TRENDING_REPORT_HTML = """\
 <div id="aside">
-  <form action="/cronSettings" method="post">
     <br>
     <p> Email Trending Report </p>
     <input type="checkbox" name="cronRate" value="No"> No reports<br>
@@ -243,7 +242,6 @@ TRENDING_REPORT_HTML = """\
     <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
     <input type="checkbox" name="cronRate" value="Day"> Every day<br>
     <input type="submit" value="Update Rate">
-  </form>
 </div>
 """
 
@@ -341,7 +339,7 @@ def generatetrendingstreams(trendinglist):
   htmlstringfinal = ""
   length = 3
   for x in range(0,length):
-    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + trendinglist['image'][x] + END_IMG_SRC_TAG + "<br />" + trendinglist['streamnames'][x] + END_ITEM_HTML 
+    htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + trendinglist['image'][x] + END_IMG_SRC_TAG + "<br />" +  NAME_LINK + trendinglist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML 
   return htmlstringfinal
 
 def generatesearchedstreams(searchlist):
@@ -686,6 +684,24 @@ class SearchPage(webapp2.RequestHandler):
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
+    logging.info('request :' + str(self.request))
+    global cron_rate
+    cronRateStr = self.request.get('cronRate')
+
+    if cronRateStr == "":
+      logging.info("No Cron rate was selected")
+    else:
+      logging.info('Cron rate selected : ' + str(cronRateStr))
+      if cronRateStr == 'Five':
+        cron_rate = 5
+      elif cronRateStr== 'Hour': 
+        cron_rate = 60
+      elif cronRateStr == 'Day':
+        cron_rate = 1440
+      elif cronRateStr == 'No':
+        cron_rate = -1
+      logging.info("Cron Rate is now %d." % cron_rate)
+      
     #Retrieve top 3 trending streams
     url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
     params = json.dumps({})
@@ -722,7 +738,7 @@ class TrendingPage(webapp2.RequestHandler):
     logging.info('Trending Stream table html :' + str(trendingStreamHtml))
 
     fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
-    #logging.info("HTML Page: " + fullhtml)
+    logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
 class SocialPage(webapp2.RequestHandler):
@@ -1471,40 +1487,40 @@ class CronJobHandler(webapp.RequestHandler):
     #Retrieve top 3 trending streams
     url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
     params = json.dumps({})
-    logging.info('URL for GetMostViewedStreams is : ' + str(url))
-    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'})
-    logging.info('GetMostViewedStreams Result is: ' + str(result.content))
+    #logging.info('URL for GetMostViewedStreams is : ' + str(url))
+    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+    #logging.info('GetMostViewedStreams Result is: ' + str(result.content))
     resultobj = json.loads(result.content)
     trendingStreams = resultobj['mostviewedstreams']
-    logging.info('TrendingStreams from service: ' + str(trendingStreams))
+    #logging.info('TrendingStreams from service: ' + str(trendingStreams))
 
     #get list of top three streams
     trendingStreamsResult = {'streamnames':list(),'imagenums':list()}
     for tstream in trendingStreams:
-      logging.info('tstream : ' + str(tstream))
+      #logging.info('tstream : ' + str(tstream))
       name = tstream['streamname']
-      logging.info("Trending stream : " + str(name))
+      #logging.info("Trending stream : " + str(name))
       imagelist = tstream['imagelist']
-      logging.info("Trending stream image list : " + str(imagelist))
+      #logging.info("Trending stream image list : " + str(imagelist))
       numpics = len(imagelist)
-      logging.info('This stream imagelist: ' + str(numpics))
+      #logging.info('This stream imagelist: ' + str(numpics))
       if len(imagelist) == 0:
         lastnewpicdate = 'N/A'
       else:
         lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-      logging.info("Treading stream creation date : " + lastnewpicdate)
+      #logging.info("Treading stream creation date : " + lastnewpicdate)
 
       trendingStreamsResult['streamnames'].append(name)
       #trendingStreamsResult['dates'].append(lastnewpicdate)
       trendingStreamsResult['imagenums'].append(numpics)
-    logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
+    #logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
     return trendingStreamsResult
 
   def sendTrendEmail(self, content):
     #self.response.write('<html><body>Cron job successful.. </body></html>')
-    emailAddress = "sadaf.syed@utexas.edu"
+    emailAddress = "ragha@utexas.edu"
 
-    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Test Email")
+    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Connexus Trends Digest - APT")
 
     if not mail.is_email_valid(emailAddress):
       logging.info("The email is not valid.")
@@ -1533,7 +1549,7 @@ class CronJobHandler(webapp.RequestHandler):
       # get top three trending streams
       #content = "Email send after " + str(elapsedMins) + " minutes."
       trendingStreams = self.getTrendingStreams();
-      content = "Top 3 Trending streams are : " + str(trendingStreams)
+      content = "Top 3 Trending streams are : " + str(trendingStreams['streamnames'][0]) + ", " + str(trendingStreams['streamnames'][1]) + ", "+ str(trendingStreams['streamnames'][2])
       self.sendTrendEmail(content)
       last_run_time = datetime.now()
       logging.info("Email send after %d mins" % elapsedMins)
