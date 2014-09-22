@@ -36,7 +36,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -468,7 +468,8 @@ class MainPage(webapp2.RequestHandler):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
     if user:
-      self.response.write(MAIN_PAGE_HTML)
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + '</body></html>'
+      self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
  
