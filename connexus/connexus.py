@@ -36,7 +36,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -752,38 +752,43 @@ class TrendingPage(webapp2.RequestHandler):
     params = json.dumps({})
     logging.info('URL for GetMostViewedStreams is : ' + str(url))
     result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-    logging.info('GetMostViewedStreams Result is: ' + str(result.content))
-    resultobj = json.loads(result.content)
-    trendingStreams = resultobj['mostviewedstreams']
-    logging.info('TrendingStreams from service: ' + str(trendingStreams))
+    
+    if result == None:
+      searchMsg = "<p> No trending reports were found. </p>"
+      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + searchMsg + TRENDING_REPORT_HTML + "</body></html>"
+    else:
+      logging.info('GetMostViewedStreams Result is: ' + str(result.content))
+      resultobj = json.loads(result.content)
+      trendingStreams = resultobj['mostviewedstreams']
+      logging.info('TrendingStreams from service: ' + str(trendingStreams))
 
-    #get list of top three streams
-    trendingStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
-    for tstream in trendingStreams:
-      imageURL = ""
-      logging.info('tstream : ' + str(tstream))
-      name = tstream['streamname']
-      logging.info("Trending stream : " + str(name))
-      imagelist = tstream['imagelist']
-      logging.info("Trending stream image list : " + str(imagelist))
-      numpics = len(imagelist)
-      logging.info('This stream imagelist: ' + str(numpics))
-      if len(imagelist) == 0:
-        lastnewpicdate = 'N/A'
-      else:
-        lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-        imageURL = imagelist[0]['imagefileurl']
-      logging.info("Treading stream creation date : " + lastnewpicdate)
+      #get list of top three streams
+      trendingStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
+      for tstream in trendingStreams:
+        imageURL = ""
+        logging.info('tstream : ' + str(tstream))
+        name = tstream['streamname']
+        logging.info("Trending stream : " + str(name))
+        imagelist = tstream['imagelist']
+        logging.info("Trending stream image list : " + str(imagelist))
+        numpics = len(imagelist)
+        logging.info('This stream imagelist: ' + str(numpics))
+        if len(imagelist) == 0:
+          lastnewpicdate = 'N/A'
+        else:
+          lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+          imageURL = imagelist[0]['imagefileurl']
+        logging.info("Treading stream creation date : " + lastnewpicdate)
 
-      trendingStreamsResult['streamnames'].append(name)
-      trendingStreamsResult['imagenums'].append(numpics)
-      trendingStreamsResult['image'].append(imageURL)
-    logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
-    trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
-    logging.info('Trending Stream table html :' + str(trendingStreamHtml))
+        trendingStreamsResult['streamnames'].append(name)
+        trendingStreamsResult['imagenums'].append(numpics)
+        trendingStreamsResult['image'].append(imageURL)
+      logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
+      trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
+      logging.info('Trending Stream table html :' + str(trendingStreamHtml))
 
-    fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
-    logging.info("HTML Page: " + fullhtml)
+      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
+      #logging.info("HTML Page: " + fullhtml)
     self.response.write(fullhtml)
 
 class SocialPage(webapp2.RequestHandler):
