@@ -37,30 +37,39 @@ def generateimagelinks(urllist,streamnamelist):
 	END_ROW = '</tr>'
 	htmlstringfinal = ""
 	length = len(urllist)
-	lengthstreams = length(streamnamelist)
-    fullrow = length/3
-    partrow = length%3
-    iternum = 0
-	for x in range(0,(fullrow + 1)):
+	lengthstreams = len(streamnamelist)
+	fullrow = length/3
+	print('full row is ' + str(fullrow))
+	partrow = length%3
+	print('part row is ' + str(partrow))
+	ispartrow = 0
+	if not partrow == 0:
+		ispartrow = 1
+	iternum = 0
+	for x in range(0,(fullrow + ispartrow)):
 		htmlstringfinal = htmlstringfinal + BEGIN_ROW
-		if x <= fullrow:
+		print ("x=" + str(x))
+		if x < fullrow:
 			for y in range(0,3):
+				print ('Full row' + str(iternum))
 				htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
 				iternum = iternum + 1
 			htmlstringfinal = htmlstringfinal + END_ROW
 		else:
 			for y in range(0,partrow):
+				print iternum
 				htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
 				iternum = iternum + 1
 			htmlstringfinal = htmlstringfinal + END_ROW
 	return htmlstringfinal
 
 
-urllist = ['http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e']
-html = generateimagelinks(urllist)
-html = HEADER_HTML + VIEW_STREAM_HTML % ('Amy', html,'0', '2')
+urllist = ['http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e','http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e']
+streamnames = ['amy2','amy3','amy4','amy5','amy6','amy2','amy3','amy4','amy5','amy6']
+html = generateimagelinks(urllist,streamnames)
+html = HEADER_HTML + VIEW_STREAM_HTML % html
 print html
-jsonfile = open("viewstest.html",'w')
+jsonfile = open("alltest.html",'w')
 jsonfile.write(html)
 jsonfile.close()
 
