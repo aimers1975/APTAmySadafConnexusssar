@@ -796,6 +796,11 @@ class SocialPage(webapp2.RequestHandler):
     fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Social page coming soon</body></html>"
     self.response.write(fullhtml)
 
+class ErrorPage(webapp2.RequestHandler):
+  def get(self):
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Error: you tried to create a new stream whose name is the same as an existing stream, operation did not complete.</body></html>"
+    self.response.write(fullhtml)
+
 class ViewAllStreamsPage(webapp2.RequestHandler):
   def get(self):
     url = 'http://' + AP_ID_GLOBAL + '/ViewAllStreams'
@@ -1665,5 +1670,6 @@ application = webapp2.WSGIApplication([
     ('/emailHandler', EmailHandler),
     ('/trends', TrendingStreams),
     ('/cronSettings', TrendingStreamsHandler),
-    ('/cron/cronjob', CronJobHandler)
+    ('/cron/cronjob', CronJobHandler),
+    ('/ErrorPage', ErrorPage)
 ], debug=True)
