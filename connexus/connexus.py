@@ -85,7 +85,7 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <ul id="list">
 <li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
 <li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewPage">View</a></li>
+<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
 <li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
 <li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
@@ -106,6 +106,7 @@ medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filen
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>"""
 
+VIEW_ALL_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg">%s</table></></body></html>"""
 
 S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form>            
@@ -125,7 +126,7 @@ S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <ul id="list">
 <li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
 <li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewPage">View</a></li>
+<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
 <li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
 <li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
@@ -293,6 +294,43 @@ def olderthanhour(checktimestring):
     logging.info("returning false")
     return False
 
+def generateallimagelinks(urllist,streamnamelist):
+  BEGIN_ROW = '<tr>'
+  BEGIN_LINK = '<th class="tg-031e"><img src="'
+  LINK2 = '" alt="Image Unavailable"><br><input id="'
+  LINK3 = '" name="'
+  LINK4 = '" type="text" input style="font-size:10px" readonly="readonly" value="'
+  END_LINK = '"></th>'
+  END_ROW = '</tr>'
+  htmlstringfinal = ""
+  length = len(urllist)
+  lengthstreams = len(streamnamelist)
+  fullrow = length/3
+  print('full row is ' + str(fullrow))
+  partrow = length%3
+  print('part row is ' + str(partrow))
+  ispartrow = 0
+  if not partrow == 0:
+    ispartrow = 1
+  iternum = 0
+  for x in range(0,(fullrow + ispartrow)):
+    htmlstringfinal = htmlstringfinal + BEGIN_ROW
+    print ("x=" + str(x))
+    if x < fullrow:
+      for y in range(0,3):
+        print ('Full row' + str(iternum))
+        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
+        iternum = iternum + 1
+      htmlstringfinal = htmlstringfinal + END_ROW
+    else:
+      for y in range(0,partrow):
+        print iternum
+        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
+        iternum = iternum + 1
+      htmlstringfinal = htmlstringfinal + END_ROW
+  return htmlstringfinal
+
+
 def generateimagelinks(urllist):
   BEGIN = '<th class="tg-031e"><img src="'
   END = '" alt="Image Unavailable" width="250" height="225"></th>'
@@ -421,7 +459,7 @@ class MainPage(webapp2.RequestHandler):
       self.response.write(MAIN_PAGE_HTML)
     else:
       self.redirect(users.create_login_url(self.request.uri))
-
+ 
 class ViewPageHandler(webapp2.RequestHandler):
   def post(self):
     logging.info('Test View page handler:')
@@ -586,8 +624,14 @@ class MgmtPage(webapp2.RequestHandler):
 
 class CreatePage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + CREATE_STREAM_HTML
-    self.response.write(fullhtml)
+    user = users.get_current_user()
+    logging.info("Current user is: " + str(user))
+    if user:
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + CREATE_STREAM_HTML
+      self.response.write(fullhtml)
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
+
 
 class ViewPage(webapp2.RequestHandler):
   def get(self):
@@ -718,7 +762,16 @@ class SocialPage(webapp2.RequestHandler):
 
 class ViewAllStreamsPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> View All Streams page coming soon</body></html>"
+    url = 'http://' + AP_ID_GLOBAL + '/ViewAllStreams'
+    logging.info('URL is: ' + str(url))
+    payload = {'test':0}
+    mydata = json.dumps(payload)
+    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+    resultjson = json.loads(result.content)
+    urllist = resultjson['coverurls']
+    streamnames = resultjson['streamlist']
+    allimageshtml = generateallimagelinks(urllist,streamnames)
+    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_ALL_STREAM_HTML % allimageshtml)
     self.response.write(fullhtml)
 
 #Sample function, we may not use
@@ -1150,8 +1203,20 @@ class ViewAllStreams(webapp2.RequestHandler):
     for stream in allstreamsbycreation:
       logging.info("This stream is: " + str(stream))
       totalstreams.append(stream.streamname)
-      coverurls.append(stream.coverurl)
+      if not (stream.coverurl == ""):
+        logging.info('There is a coverurl')
+        coverurls.append(stream.coverurl)
+      else:
+        try:
+          myimages = stream.imagelist
+          logging.info("My images: " + str(myimages))
+          thisimage = myimages[0]
+          logging.info("This image: " + str(thisimage))
 
+          coverurls.append(thisimage.imagefileurl)
+          logging.info(str(thisimage.imagefileurl))
+        except:
+          coverurls.append("No image available")
     logging.info("Total streams: " + str(totalstreams))
     logging.info("Coverurls: " + str(coverurls))
     payload = {'streamlist':totalstreams,'coverurls':coverurls}
