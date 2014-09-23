@@ -19,6 +19,7 @@ import re
 import os
 import uuid
 import base64
+import string
 
 #Probably not necessary to change default retry params, but here for example
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
@@ -261,17 +262,19 @@ SEARCH_STREAMS_HTML = """\
 
 SEARCH_RESULT_HTML = """\
 <div id="article">
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
-</style>
-<table width="500" cellpadding="5">
-<tr>
-%s
-</tr>
-</table>
+<form action="/HandleMgmtForm" method="post">
+  <style type="text/css">
+  .tg  {border-collapse:collapse;border-spacing:0;}
+  .tg tr {border:none;}
+  .tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+  .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+  </style>
+  <table width="500" cellpadding="5">
+  <tr>
+  %s
+  </tr>
+  </table>
+</form>
 <div>
 """
 NAME_LINK = '<class="buttons"><input type="hidden" name="form_id" value="903438" /><br><input id="view" class="submitLink" type="submit" name="view" value="'
@@ -389,7 +392,7 @@ def generatesearchedstreams(searchlist):
   htmlstringfinal = ""
   length = len(searchlist['streamnames'])
   for x in range(0,length):
-      htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + searchlist['streamnames'][x] + END_ITEM_HTML
+      htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + NAME_LINK + searchlist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML
   return htmlstringfinal
 
 def generateallstreams(allStreamslist):
@@ -682,54 +685,56 @@ class SearchPage(webapp2.RequestHandler):
     searchString = self.request.get('searchString')
     logging.info('searchString is :' + searchString)
 
-    if searchString == "":
-      logging.info('searchString is null')
-      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
-      self.response.write(fullhtml)
-    else:
-      logging.info('searchString is not null')
-      searchParams = json.dumps({'streamname':searchString})
-      logging.info('URL for SearchStreams is : ' + str(url))
-      result = urlfetch.fetch(url=url, payload=searchParams, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-      logging.info('SearchStreams Result is: ' + str(result.content))
-      searchedStreams = json.loads(result.content)
-      #searchedStreams = resultobj['mostviewedstreams']
-      logging.info('SearchStreams from service: ' + str(searchedStreams))
+    try:
+      if searchString == "":
+        logging.info('searchString is null')
+        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
+        self.response.write(fullhtml)
+      else:
+        logging.info('searchString is not null')
+        searchParams = json.dumps({'streamname':searchString})
+        logging.info('URL for SearchStreams is : ' + str(url))
+        result = urlfetch.fetch(url=url, payload=searchParams, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+        logging.info('SearchStreams Result is: ' + str(result.content))
+        if not (str(result.content) == "{'errorcode':6}"):
+          searchedStreams = json.loads(result.content)
+          #searchedStreams = resultobj['mostviewedstreams']
+          logging.info('SearchStreams from service: ' + str(searchedStreams))
 
-      searchedStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
-      for tstream in searchedStreams:
-        imgstring =""
-        name = tstream['streamname']
-        logging.info("Sreached stream : " + str(name))
-        imagelist = tstream['imagelist']
-        logging.info("Searched stream image list : " + str(imagelist))
-        numpics = len(imagelist)
-        logging.info('This stream imagelist: ' + str(numpics))
-        if len(imagelist) == 0:
-          lastnewpicdate = 'N/A'
-          imgString = ""
+          searchedStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
+          for tstream in searchedStreams:
+            imgstring =""
+            name = tstream['streamname']
+            logging.info("Sreached stream : " + str(name))
+            imagelist = tstream['imagelist']
+            logging.info("Searched stream image list : " + str(imagelist))
+            numpics = len(imagelist)
+            logging.info('This stream imagelist: ' + str(numpics))
+            if len(imagelist) == 0:
+              lastnewpicdate = 'N/A'
+              imgString = ""
+            else:
+              lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+              imgString = imagelist[0]['imagefileurl']
+              logging.info('image URL is : ' + str(imgString))
+            logging.info("Sreached stream creation date : " + lastnewpicdate)
+
+            searchedStreamsResult['streamnames'].append(name)
+            searchedStreamsResult['imagenums'].append(numpics)
+            searchedStreamsResult['image'].append(imgString)
+          logging.info('Search returned following Streams :' + str(searchedStreamsResult))
+          searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
+          length = len(searchedStreamsResult['streamnames'])
+          searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
+          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          self.response.write(fullhtml)
         else:
-          lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-          imgString = imagelist[0]['imagefileurl']
-          logging.info('image URL is : ' + str(imgString))
-
-          #bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
-          #logging.info('bucket_name is : ' + str(bucket_name))
-          #gcs_filename = imagelist[len(imagelist)-1]['imageid']
-          #blob_key = blobstore.create_gs_key('/gs/' + bucket_name + '/' + name + '/' + gcs_filename)
-          #logging.info('blob_key is : ' + str(blob_key))
-          # Fetch data.
-          #imgstring = 'Fetched data ' + str(blobstore.fetch_data(blob_key, 0, 2)) + '\n'
-        logging.info("Sreached stream creation date : " + lastnewpicdate)
-
-        searchedStreamsResult['streamnames'].append(name)
-        searchedStreamsResult['imagenums'].append(numpics)
-        searchedStreamsResult['image'].append(imgString)
-      logging.info('Search returned following Streams :' + str(searchedStreamsResult))
-      searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
-      length = len(searchedStreamsResult['streamnames'])
-      searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
-      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
+          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          self.response.write(fullhtml)
+    except:
+      searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
       self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
@@ -916,13 +921,13 @@ class CreateStream(webapp2.RequestHandler):
       logging.info('\nStreamname: ' + streamname)
       owner = data['currentuser']
       logging.info('\nOwner: ' + str(owner))
-      if(streamname == ''):
+      if streamname == '':
         logging.info('Streamname is equal to empty string, we should exit.')
         payload = {'errorcode':3}
         result = json.dumps(payload)
         self.response.write(result)
         return 
-      if(owner == ''):
+      if owner == '':
         logging.info('Owner is equal to empty string, we should exit.')
         payload = {'errorcode':2}
         result = json.dumps(payload)
@@ -988,6 +993,7 @@ class CreateStream(webapp2.RequestHandler):
         
         stream.put()
         payload = {'errorcode':0}
+
     except:
       payload = {'errorcode':3}
     result = json.dumps(payload)
@@ -1292,46 +1298,49 @@ class SearchStreams(webapp2.RequestHandler):
     return streamList
 
   def post(self):
-    logging.info('Entering SerachStreams Handler')
-    data = json.loads(self.request.body)
-    logging.info('this is what Im looking for: ' + str(data))
-     
-    streamFilterList = data['streamname']
-    logging.info('Stream filter: ' + str(streamFilterList)) 
+    try:
+      logging.info('Entering SerachStreams Handler')
+      data = json.loads(self.request.body)
+      logging.info('this is what Im looking for: ' + str(data))
+       
+      streamFilterList = data['streamname']
+      logging.info('Stream filter: ' + str(streamFilterList)) 
 
-    #get all streams
-    listOfStreams = list()
+      #get all streams
+      listOfStreams = list()
 
-    logging.info("Query to get all the streams")
-    allstreams_query = Stream.query().order(Stream.creationdate)
-    listOfStreams = allstreams_query.fetch()
-    logging.info('Query for all streams returned:' + str(listOfStreams))
+      logging.info("Query to get all the streams")
+      allstreams_query = Stream.query().order(Stream.creationdate)
+      listOfStreams = allstreams_query.fetch()
+      logging.info('Query for all streams returned:' + str(listOfStreams))
 
-    streamFilter = streamFilterList[0]
-    
-    searchResultList = list()
-    for streamItem in listOfStreams:
-      if streamFilter in streamItem.streamname:
-        searchResultList.append(self.convertStreamObjToList(streamItem))
-        #logging.info('Stream found with name match: ' + str(streamItem))
+      streamFilter = streamFilterList[0]
+      
+      searchResultList = list()
+      for streamItem in listOfStreams:
+        if streamFilter in streamItem.streamname:
+          searchResultList.append(self.convertStreamObjToList(streamItem))
+          #logging.info('Stream found with name match: ' + str(streamItem))
 
-    for streamItem in listOfStreams:
-      tagList = streamItem.taglist
-      for tag in tagList:
-        if streamFilter in tag:
-          #if stream is not already in searchResultList then add it
-          if self.alreadyExists(searchResultList, streamItem):
-            logging.info('Stream ' + str(streamItem) + 'has been already found.')
-          else:
-            searchResultList.append(self.convertStreamObjToList(streamItem))
-            #logging.info('Stream found with tag match: ' + str(streamItem))
+      for streamItem in listOfStreams:
+        tagList = streamItem.taglist
+        for tag in tagList:
+          if streamFilter in tag:
+            #if stream is not already in searchResultList then add it
+            if self.alreadyExists(searchResultList, streamItem):
+              logging.info('Stream ' + str(streamItem) + 'has been already found.')
+            else:
+              searchResultList.append(self.convertStreamObjToList(streamItem))
+              #logging.info('Stream found with tag match: ' + str(streamItem))
 
-    logging.info("SearchResultList: " + str(searchResultList))
+      logging.info("SearchResultList: " + str(searchResultList))
 
-    result = json.dumps(searchResultList)
-    #payload = {'errorcode':1}
+      payload = searchResultList
+    except:
+      payload = {'errorcode':6}
+
+    result = json.dumps(payload)
     self.response.write(result)
-    logging.info('Exiting SerachStreams Handler')
 
 class ViewAllPageHandler(webapp2.RequestHandler):
   def post(self):
@@ -1411,6 +1420,7 @@ class DeleteStreams(webapp2.RequestHandler):
         stream_query = Stream.query(Stream.streamname == deletestream)
         logging.info('Created query')
         mydeletestream = stream_query.get()
+        logging.info('Query returned: ' + str(mydeletestream))
         logging.info("past query")
         logging.info("My key is: " + str(mydeletestream.key))
         stream_keys.append(mydeletestream.key)
