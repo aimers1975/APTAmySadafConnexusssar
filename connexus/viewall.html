@@ -13,22 +13,51 @@
 <div>
 <body>
 <!--Need to add links for pages once done-->
-<ul id="list">
-<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
-<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewPage">View</a></li>
-<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
-<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
-<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
-</ul><form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
-
-
-<div><table class="tg"><tr>
-<th class="tg-031e"><input type="image" src="http://storage.googleapis.com/connexusssar.appspot.com/view1/bac9e19c-41cb-11e4-8220-1fc257c50103" alt="Image Unavailable" width=225 height=225 name="submit" value="mystream" /><br><input id="Streamname" name="Streamname" type="text" input style="font-size:10px" readonly="readonly" value="Streamname"></th>
-<th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e" alt="Image Unavailable"><br><input id="Streamname" name="Streamname" type="text" input style="font-size:10px" readonly="readonly" value="Streamname"></th>
-</tr>
-<tr>
-<th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/view1/bac9e19c-41cb-11e4-8220-1fc257c50103" alt="Image Unavailable" width=225 height=225><br><input id="Streamname" name="Streamname" type="text" input style="font-size:10px" readonly="readonly" value="Streamname"></th><th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e" alt="Image Unavailable"><br><input id="Streamname" name="Streamname" type="text" input style="font-size:10px" readonly="readonly" value="Streamname"></th><th class="tg-031e"><img src="http://storage.googleapis.com/connexusssar.appspot.com/amy1/027c9d6b-4123-11e4-aa6a-154df3ce051e" alt="Image Unavailable"><br><input id="Streamname" name="Streamname" type="text" input style="font-size:10px" readonly="readonly" value="Streamname"></th>
-</tr>
+"""<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Delete</th>
+  </tr>
+<!--will need to dynamically generate each ITEM based on streamlist-->
+<style>
+.submitLink {
+background-color: transparent;
+text-decoration: underline;
+border: none;
+color: blue;
+cursor: pointer;
+}
+</style>
+%s
 </table>
-</></body></html>
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
+<h3>Streams I subscribe to</h3>
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Views</th>
+    <th class="tg-031e">Unsubscribe</th>
+  </tr>
+%s
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe" /></></body></html>"""

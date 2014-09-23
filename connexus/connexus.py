@@ -36,7 +36,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -106,7 +106,11 @@ medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filen
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
 </></body></html>"""
 
-VIEW_ALL_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg">%s</table></></body></html>"""
+VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
+<table class="tg">
+%s
+</table>
+</body></html>"""
 
 S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <div id="form_container"><form><div class="form_description"></div>            
@@ -131,13 +135,13 @@ S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul>"""
-
+#Todo take out td height
 MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:5px 5px; height: 18px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal; height: 18px; padding:5px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
 <table class="tg">
   <tr>
     <th class="tg-031e">Name</th>
@@ -303,36 +307,31 @@ def olderthanhour(checktimestring):
 
 def generateallimagelinks(urllist,streamnamelist):
   BEGIN_ROW = '<tr>'
-  BEGIN_LINK = '<th class="tg-031e"><img src="'
-  LINK2 = '" alt="Image Unavailable"><br><input id="'
-  LINK3 = '" name="'
-  LINK4 = '" type="text" input style="font-size:10px" readonly="readonly" value="'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
+
   htmlstringfinal = ""
   length = len(urllist)
   lengthstreams = len(streamnamelist)
   fullrow = length/3
-  print('full row is ' + str(fullrow))
   partrow = length%3
-  print('part row is ' + str(partrow))
   ispartrow = 0
   if not partrow == 0:
     ispartrow = 1
   iternum = 0
   for x in range(0,(fullrow + ispartrow)):
     htmlstringfinal = htmlstringfinal + BEGIN_ROW
-    print ("x=" + str(x))
     if x < fullrow:
       for y in range(0,3):
-        print ('Full row' + str(iternum))
-        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
+        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + END_LINK
         iternum = iternum + 1
       htmlstringfinal = htmlstringfinal + END_ROW
     else:
       for y in range(0,partrow):
-        print iternum
-        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + LINK4 + streamnamelist[iternum] + END_LINK
+        htmlstringfinal = htmlstringfinal + BEGIN_LINK + urllist[iternum] + LINK2 + streamnamelist[iternum] + LINK3 + streamnamelist[iternum] + END_LINK
         iternum = iternum + 1
       htmlstringfinal = htmlstringfinal + END_ROW
   return htmlstringfinal
@@ -415,6 +414,7 @@ def processSubscriberList(subdata):
     subscriberlist = list()
     for subscriber in subdata:
       subscriber = subscriber.strip()
+      #TODO - For now remove check for valid email?
       if(re.match(r'^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$',subscriber)):
         logging.info('Found valid email')
         subscriberlist.append(subscriber)
@@ -522,7 +522,8 @@ class ViewPageHandler(webapp2.RequestHandler):
         self.redirect('/MgmtPage')
       elif (str(subscribe) == 'Subscribe'):
         logging.info("Subscribe is: " + str(subscribe))
-        user = str(users.get_current_user())
+        user = users.get_current_user()
+        user = str(user.email())
         mydata = json.dumps({"subuser": user, "streamname": streamname})
         url = 'http://' + AP_ID_GLOBAL + '/SubscribeStream'
         result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
@@ -586,7 +587,11 @@ class Stream(ndb.Model):
 
 class MgmtPage(webapp2.RequestHandler):
   def get(self):
-    user = str(users.get_current_user())
+    user = users.get_current_user()
+    if user:
+      user = user.email()
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
     logging.info("Current user is: " + user)
     mydata = json.dumps({'userid':user})
     url = 'http://' + AP_ID_GLOBAL + '/ManageStream'
@@ -867,7 +872,8 @@ class GetStreamData(webapp2.RequestHandler):
   #Creats the json object with the streamname, subscriber emails, and tags
   #and call Create stream web service and send the json data
    def post(self):
-        user  = str(users.get_current_user())
+        user  = users.get_current_user()
+        user = str(user.email())
         logging.info('Current user: ' + str(user))
         streamname = cgi.escape(self.request.get('streamname'))
         logging.info('Stream Name: ' + str(streamname))
@@ -1271,7 +1277,7 @@ class SearchStreams(webapp2.RequestHandler):
       if newItem.streamname == item['streamname']:
         #logging.info('Found')
         return True
-    return false
+    return False
 
   def convertStreamObjToList(self, streamObj):
     streamObjList = streamObj.imagelist
@@ -1327,14 +1333,25 @@ class SearchStreams(webapp2.RequestHandler):
     self.response.write(result)
     logging.info('Exiting SerachStreams Handler')
 
-class HandleMgmtForm(webapp2.RequestHandler):
+class ViewAllPageHandler(webapp2.RequestHandler):
+  def post(self):
+    streamname = cgi.escape(self.request.get('Streamname'))
+    logging.info("Request "  + str(self.request))
+    url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
+    mydata = json.dumps({'streamname':str(streamname),'pagerange':[0,2]})
+    result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
+    self.response.write(str(result.content))
 
+class HandleMgmtForm(webapp2.RequestHandler):
 
   def post(self):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
+    logging.info("Request content: " + str(self.request))
     if not user:
       self.redirect(users.create_login_url(self.request.uri))
+    else:
+      user = str(user.email())
     delchecked = cgi.escape(self.request.get('delete_checked'))
     unsubchecked = cgi.escape(self.request.get('unsubscribe_checked'))
     view = cgi.escape(self.request.get('view'))
@@ -1521,7 +1538,7 @@ class EmailHandler(webapp2.RequestHandler):
     emailAddress=self.request.get('toEmail')
     subject = self.request.get('subject')
     content = self.request.get('message')
-    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject=subject)
+    message = mail.EmailMessage(sender="aimers1975@gmail.com", subject=subject)
 
     if not mail.is_email_valid(emailAddress):
       self.response.out.write("Email address is not valid.")
@@ -1596,7 +1613,7 @@ class CronJobHandler(webapp.RequestHandler):
     #self.response.write('<html><body>Cron job successful.. </body></html>')
     emailAddress = "ragha@utexas.edu"
 
-    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Connexus Trends Digest - APT")
+    message = mail.EmailMessage(sender="amy_hindman@yahoo.com", subject="Connexus Trends Digest - APT")
 
     if not mail.is_email_valid(emailAddress):
       logging.info("The email is not valid.")
@@ -1655,6 +1672,7 @@ application = webapp2.WSGIApplication([
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
     ('/ViewAllStreamsPage', ViewAllStreamsPage),
+    ('/ViewAllPageHandler', ViewAllPageHandler),
     ('/SubscribeStream', SubscribeStream),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
