@@ -696,8 +696,9 @@ class MgmtPage(webapp2.RequestHandler):
     mystreamshtml = generatestreamsiownlist(myupdatelist)
     mysubscribeshtml = generatestreamssubscribed(myupdatelist2)
     if user:
-      updatedheader = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL))
-      fullhtml = updatedheader + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
+      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+      fullhtml = template.render(templateVars) + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
