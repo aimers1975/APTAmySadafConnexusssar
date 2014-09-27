@@ -68,29 +68,6 @@ VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHan
 </table>
 </body></html>"""
 
-S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
-<div id="form_container"><form><div class="form_description"></div>            
-<body><head><h1>Connex.us</h1></head>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Style Test</title>
-<style type="text/css">
-#list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
-.first { border-left: none; padding-left: 0; }
-</style>
-</head>
-</div>
-<body>
-<!--Need to add links for pages once done-->
-<ul id="list">
-<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
-<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
-<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
-<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
-<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
-</ul>"""
 #Todo take out td height
 MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
 <style type="text/css">
@@ -160,7 +137,7 @@ EMAIL_HTML = """\
 </html>
 """
 
-TRENDING_PAGE_STYLE = """\
+TRENDING_PAGE_STYLE = """
 <style>
 #section {
     width:350px;
@@ -177,8 +154,8 @@ TRENDING_PAGE_STYLE = """\
 </style>
 """
 
-TRENDING_STREAMS_HTML = """\
-<div id="section">
+TRENDING_STREAMS_HTML = """
+<div id="form_container"><form><div class="form_description"></div><div id="section">
   <H2>Top 3 Trending Streams</H2>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -194,8 +171,8 @@ TRENDING_STREAMS_HTML = """\
 </div>
 """
 
-TRENDING_REPORT_HTML = """\
-<div id="aside">
+TRENDING_REPORT_HTML = """
+<div id="form_container"><form><div class="form_description"></div><div id="aside">
     <br>
     <p> Email Trending Report </p>
     <input type="checkbox" name="cronRate" value="No"> No reports<br>
@@ -206,8 +183,8 @@ TRENDING_REPORT_HTML = """\
 </div>
 """
 
-SEARCH_STREAMS_HTML = """\
-<div id="aside">
+SEARCH_STREAMS_HTML = """
+<div id="form_container"><form><div class="form_description"></div><div id="aside">
    <form action="/SearchStreams" method="post">
      <input name="searchString" placeholder="Stream Name:">
      <input type="submit" value="Search">
@@ -215,8 +192,8 @@ SEARCH_STREAMS_HTML = """\
 </div>
 """
 
-SEARCH_RESULT_HTML = """\
-<div id="article">
+SEARCH_RESULT_HTML = """
+<div id="form_container"><form><div class="form_description"></div><div id="article">
 <form action="/ViewAllPageHandler" method="post">
   <style type="text/css">
   .tg  {border-collapse:collapse;border-spacing:0;}
@@ -238,7 +215,7 @@ BEGIN = '<tr>'
 START_ITEM_HTML = '<td class="tg-031e">'
 END_ITEM_HTML = '</td>'
 
-ALL_STREAMS_HTML = """\
+ALL_STREAMS_HTML = """
 <div id="article">
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -707,7 +684,7 @@ class SearchPage(webapp2.RequestHandler):
     try:
       if searchString == "":
         logging.info('searchString is null')
-        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
+        fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + "</body></html>"
       else:
         logging.info('searchString is not null')
         searchParams = json.dumps({'streamname':searchString})
@@ -760,7 +737,8 @@ class TrendingPage(webapp2.RequestHandler):
     logging.info('request :' + str(self.request))
     global cron_rate
     cronRateStr = self.request.get('cronRate')
-
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     if cronRateStr == "":
       logging.info("No Cron rate was selected")
     else:
@@ -791,7 +769,7 @@ class TrendingPage(webapp2.RequestHandler):
       
       if result == None:
         searchMsg = "<p> No trending reports were found. </p>"
-        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + searchMsg + TRENDING_REPORT_HTML + "</body></html>"
+        fullhtml = template.render(templateVars) + TRENDING_PAGE_STYLE + searchMsg + TRENDING_REPORT_HTML + "</body></html>"
       else:
         logging.info('GetMostViewedStreams Result is: ' + str(result.content))
         resultobj = json.loads(result.content)
@@ -824,7 +802,7 @@ class TrendingPage(webapp2.RequestHandler):
         trendingStreamHtml = generatetrendingstreamslinks(trendingStreamsResult)
         logging.info('Trending Stream table html :' + str(trendingStreamHtml))
 
-        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
+        fullhtml = template.render(templateVars) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
         #logging.info("HTML Page: " + fullhtml)
       self.response.write(fullhtml)
 
@@ -1335,7 +1313,7 @@ class SearchStreams(webapp2.RequestHandler):
 
   def post(self):
     try:
-      logging.info('Entering SerachStreams Handler')
+      logging.info('Entering SearchStreams Handler')
       data = json.loads(self.request.body)
       logging.info('this is what Im looking for: ' + str(data))
        

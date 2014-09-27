@@ -1,9 +1,9 @@
 
 #titleconnex {
-	background-color: #99FFFF; font-family: Arial, sans-serif; height: 70px; border-radius: 5px; font-color: #606060; font-size: 50px; margin-top: auto; margin-bottom: auto;
+	background-color: #99FFFF; font-family: Arial, sans-serif; height: 65px; border-radius: 5px; font-color: #663399; font-size: 50px; margin-top: auto; margin-bottom: auto;
 }
     
 
 #list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; font-family: Arial, sans-serif;}
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; font-family: Arial, sans-serif; background-color: #FFCC99;}
 .first { border-left: none; padding-left: 0; }
