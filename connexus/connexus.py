@@ -29,7 +29,7 @@ my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_retry_period=15)
 #TODO - Not sure this is the right place for this.
 JINJA_ENVIRONMENT = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__) + '/templates'),
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
@@ -46,59 +46,6 @@ last_run_time = datetime.now()
 first_run = False
 
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
-
-MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
-<div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
-<body><head><h1>Welcome To Connexus!</h1></head><h3>Sharing the world!<h3><br><br>
-<div><input id="login_name" name="login_name" class="element text medium" type="text" maxlength="255" value="Gmail User ID"/></div></><br>
-<input id="password" name="password" class="element text medium" type="text" maxlength="255" value="Gmail Password"/></div></><br>
-<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="saveForm" class="button_text" type="submit" name="submit" value="Login" /></></body></html>"""
- 
-
-
-CREATE_STREAM_HTML =  """<div id="form_container"><form id="form_904777" form action="/GetStreamData" method="post" action=""><div class="form_description"></div>            
-    <label class="description" for="streamname">Name Your Stream </label>
-    <div><input id="streamname" name="streamname" class="element text medium" type="text" maxlength="255" value=""/></div> 
-    <label class="description" for="subscribers">Add Subscribers </label><div>
-      <textarea id="subscribers" name="subscribers" class="element textarea medium"></textarea> </div> 
-    <label class="description" for="submessage">(Optional) Message For Subscribers </label><div>
-      <textarea id="submessage" name="submessage" class="element textarea medium"></textarea></div> 
-    <label class="description" for="tags">Tag Your Stream </label> <div>
-      <input id="tags" name="tags" class="element text medium" type="text" maxlength="255" value=""/> </div> 
-    <label class="description" for="coverurl">(Optional) URL For Cover Image </label>  <div>
-      <input id="coverurl" name="coverurl" class="element text medium" type="text" maxlength="255" value=""/> </div> 
-    <class="buttons"> <input type="hidden" name="form_id" value="904777" /> <input id="saveForm" class="button_text" type="submit" name="submit" value="Submit" /></>
-      </ul>
-    </form> 
-  </div>
-  </body>
-</html>"""
-
-
-HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
-<body><head><h1>Connex.us</h1></head>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Style Test</title>
-<style type="text/css">
-#list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
-.first { border-left: none; padding-left: 0; }
-</style>
-</head>
-
-<div>
-<body>
-<!--Need to add links for pages once done-->
-<ul id="list">
-<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
-<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
-<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
-<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
-<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
-</ul>"""
 
 VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
 <input id="Streamname" name="Streamname" type="text" input style="font-size:25px" readonly="readonly" value="%s's Stream"><br>
@@ -523,6 +470,8 @@ def delete_images(imagefiles):
 class MainPage(webapp2.RequestHandler):
   def get(self):
     user = users.get_current_user()
+    logging.info("Template path is: " + str(os.path.dirname(__file__)))
+    logging.info("Template path is: " + str(os.path.dirname(__file__)) + '/templates')
     logging.info("Current user is: " + str(user))
     template = JINJA_ENVIRONMENT.get_template('index.jinja')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
@@ -710,7 +659,8 @@ class CreatePage(webapp2.RequestHandler):
     if user:
       template = JINJA_ENVIRONMENT.get_template('index.jinja')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
-      fullhtml = template.render(templateVars) + CREATE_STREAM_HTML
+      createtemplate = JINJA_ENVIRONMENT.get_template('createpage.html')
+      fullhtml = template.render(templateVars) + createtemplate.render()
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))

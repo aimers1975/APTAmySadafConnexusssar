@@ -1,0 +1,7 @@
+
+#titleconnex {
+	background-color: blue; font-family: Arial, sans-serif;
+}
+#list 
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
+.first { border-left: none; padding-left: 0; }
