@@ -20,12 +20,20 @@ import os
 import uuid
 import base64
 import string
+import jinja2
 
 #Probably not necessary to change default retry params, but here for example
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
                                           max_delay=5.0,
                                           backoff_factor=2,
                                           max_retry_period=15)
+#TODO - Not sure this is the right place for this.
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True)
+
+
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
@@ -468,8 +476,10 @@ class MainPage(webapp2.RequestHandler):
   def get(self):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     if user:
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + '</body></html>'
+      fullhtml = template.render(templateVars)
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
@@ -563,7 +573,10 @@ class ViewPageHandler(webapp2.RequestHandler):
           newstart = jsonresult['pagerange'][0]
           newend = jsonresult['pagerange'][1]
           imagelinks = generateimagelinks(jsonresult['picurls']) 
-        self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % (str(streamname),imagelinks,str(newstart),str(newend))))
+        template = JINJA_ENVIRONMENT.get_template('index.jinja')
+        templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+        fullhtml = template.render(templateVars) + (VIEW_STREAM_HTML % (str(streamname),imagelinks,str(newstart),str(newend)))
+        self.response.write(fullhtml)
     except:
       logging.info("Problem uploading file")
       self.redirect('/Error')

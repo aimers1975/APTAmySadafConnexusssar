@@ -22,12 +22,12 @@ HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
 <li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
 </ul>"""
 
-VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg">%s</table></></body></html>"""
+VIEW_ALL_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div><div><table class="tg">%s</table></></body></html>"""
 
 
 
 
-def generateimagelinks(urllist,streamnamelist):
+def generateallimagelinks(urllist,streamnamelist):
 	BEGIN_ROW = '<tr>'
 	BEGIN_LINK = '<th class="tg-031e"><img src="'
 	LINK2 = '" alt="Image Unavailable"><br><input id="'
