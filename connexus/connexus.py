@@ -45,7 +45,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 MAIN_PAGE_HTML = """<!DOCTYPE html><html><head><title>Welcome To Connexus!</title></head>
 <div id="form_container"><form action="/Login" method="post"><div class="form_description"></div>           
@@ -270,7 +270,7 @@ SEARCH_STREAMS_HTML = """\
 
 SEARCH_RESULT_HTML = """\
 <div id="article">
-<form action="/HandleMgmtForm" method="post">
+<form action="/ViewAllPageHandler" method="post">
   <style type="text/css">
   .tg  {border-collapse:collapse;border-spacing:0;}
   .tg tr {border:none;}
@@ -390,6 +390,21 @@ def generatetrendingstreams(trendinglist):
     htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + trendinglist['image'][x] + END_IMG_SRC_TAG + "<br />" +  NAME_LINK + trendinglist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML 
   return htmlstringfinal
 
+def generatetrendingstreamslinks(trendinglist):
+  BEGIN_ROW = '<tr>'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
+  END_LINK = '"></th>'
+  END_ROW = '</tr>'
+
+  htmlstringfinal = ""
+  length = 3
+  for x in range(0,length):
+    htmlstringfinal = htmlstringfinal + BEGIN_LINK + trendinglist['image'][x] + LINK2 + trendinglist['streamnames'][x] + LINK3 + trendinglist['streamnames'][x] + END_LINK
+  htmlstringfinal = htmlstringfinal + END_ROW
+  return htmlstringfinal
+
 def generatesearchedstreams(searchlist):
   BEGIN = '<tr>'
   START_ITEM_HTML = '<td align="center" valign="center">'
@@ -402,6 +417,39 @@ def generatesearchedstreams(searchlist):
   for x in range(0,length):
       htmlstringfinal = htmlstringfinal + START_ITEM_HTML + START_IMG_SRC_TAG + searchlist['image'][x] + END_IMG_SRC_TAG + "<br />" + NAME_LINK + searchlist['streamnames'][x] + NAME_LINK2 + END_ITEM_HTML
   return htmlstringfinal
+
+def generatesearchedstreamslinks(searchlist):
+  BEGIN_ROW = '<tr>'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
+  END_LINK = '"></th>'
+  END_ROW = '</tr>'
+
+  htmlstringfinal = ""
+  lengthstreams = len(searchlist['streamnames'])
+  logging.info('lengthstreams : ' + str(lengthstreams))
+  fullrow = lengthstreams/3
+  partrow = lengthstreams%3
+  ispartrow = 0
+  if not partrow == 0:
+    ispartrow = 1
+  iternum = 0
+  for x in range(0,(fullrow + ispartrow)):
+    htmlstringfinal = htmlstringfinal + BEGIN_ROW
+    if x < fullrow:
+      for y in range(0,3):
+        if y<lengthstreams:
+          htmlstringfinal = htmlstringfinal + BEGIN_LINK + searchlist['image'][iternum] + LINK2 + searchlist['streamnames'][iternum] + LINK3 + searchlist['streamnames'][iternum] + END_LINK
+          iternum = iternum + 1
+        htmlstringfinal = htmlstringfinal + END_ROW
+    else:
+      for y in range(0,partrow):
+        htmlstringfinal = htmlstringfinal + BEGIN_LINK + searchlist['image'][iternum] + LINK2 + searchlist['streamnames'][iternum] + LINK3 + searchlist['streamnames'][iternum] + END_LINK
+        iternum = iternum + 1
+      htmlstringfinal = htmlstringfinal + END_ROW
+  return htmlstringfinal
+
 
 def generateallstreams(allStreamslist):
   BEGIN = '<tr>'
@@ -736,7 +784,9 @@ class SearchPage(webapp2.RequestHandler):
             searchedStreamsResult['imagenums'].append(numpics)
             searchedStreamsResult['image'].append(imgString)
           logging.info('Search returned following Streams :' + str(searchedStreamsResult))
-          searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
+          #searchStreamHtml = generatesearchedstreams(searchedStreamsResult)
+          searchStreamHtml = generatesearchedstreamslinks(searchedStreamsResult)
+          logging.info('Search stream page html: ' + searchStreamHtml)
           length = len(searchedStreamsResult['streamnames'])
           searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
           fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
@@ -747,7 +797,7 @@ class SearchPage(webapp2.RequestHandler):
           self.response.write(fullhtml)
     except:
       searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
       self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
@@ -769,50 +819,59 @@ class TrendingPage(webapp2.RequestHandler):
       elif cronRateStr == 'No':
         cron_rate = -1
       logging.info("Cron Rate is now %d." % cron_rate)
+
+    streamname = cgi.escape(self.request.get('Streamname'))
+    if streamname != "":
+      logging.info("Request "  + str(self.request))
+      url = 'http://' + AP_ID_GLOBAL + '/ViewPage'
+      mydata = json.dumps({'streamname':str(streamname),'pagerange':[0,2]})
+      result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'},deadline=30)
+      self.response.write(str(result.content))
+    else: 
+      #Retrieve top 3 trending streams
+      url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
+      params = json.dumps({})
+      logging.info('URL for GetMostViewedStreams is : ' + str(url))
+      result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
       
-    #Retrieve top 3 trending streams
-    url = 'http://' + AP_ID_GLOBAL + '/GetMostViewedStreams'
-    params = json.dumps({})
-    logging.info('URL for GetMostViewedStreams is : ' + str(url))
-    result = urlfetch.fetch(url=url, payload=params, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-    
-    if result == None:
-      searchMsg = "<p> No trending reports were found. </p>"
-      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + searchMsg + TRENDING_REPORT_HTML + "</body></html>"
-    else:
-      logging.info('GetMostViewedStreams Result is: ' + str(result.content))
-      resultobj = json.loads(result.content)
-      trendingStreams = resultobj['mostviewedstreams']
-      logging.info('TrendingStreams from service: ' + str(trendingStreams))
+      if result == None:
+        searchMsg = "<p> No trending reports were found. </p>"
+        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + searchMsg + TRENDING_REPORT_HTML + "</body></html>"
+      else:
+        logging.info('GetMostViewedStreams Result is: ' + str(result.content))
+        resultobj = json.loads(result.content)
+        trendingStreams = resultobj['mostviewedstreams']
+        logging.info('TrendingStreams from service: ' + str(trendingStreams))
 
-      #get list of top three streams
-      trendingStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
-      for tstream in trendingStreams:
-        imageURL = ""
-        logging.info('tstream : ' + str(tstream))
-        name = tstream['streamname']
-        logging.info("Trending stream : " + str(name))
-        imagelist = tstream['imagelist']
-        logging.info("Trending stream image list : " + str(imagelist))
-        numpics = len(imagelist)
-        logging.info('This stream imagelist: ' + str(numpics))
-        if len(imagelist) == 0:
-          lastnewpicdate = 'N/A'
-        else:
-          lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
-          imageURL = imagelist[0]['imagefileurl']
-        logging.info("Treading stream creation date : " + lastnewpicdate)
+        #get list of top three streams
+        trendingStreamsResult = {'streamnames':list(),'imagenums':list(), 'image':list()}
+        for tstream in trendingStreams:
+          imageURL = ""
+          logging.info('tstream : ' + str(tstream))
+          name = tstream['streamname']
+          logging.info("Trending stream : " + str(name))
+          imagelist = tstream['imagelist']
+          logging.info("Trending stream image list : " + str(imagelist))
+          numpics = len(imagelist)
+          logging.info('This stream imagelist: ' + str(numpics))
+          if len(imagelist) == 0:
+            lastnewpicdate = 'N/A'
+          else:
+            lastnewpicdate = imagelist[len(imagelist)-1]['imagecreationdate']
+            imageURL = imagelist[0]['imagefileurl']
+          logging.info("Treading stream creation date : " + lastnewpicdate)
 
-        trendingStreamsResult['streamnames'].append(name)
-        trendingStreamsResult['imagenums'].append(numpics)
-        trendingStreamsResult['image'].append(imageURL)
-      logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
-      trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
-      logging.info('Trending Stream table html :' + str(trendingStreamHtml))
+          trendingStreamsResult['streamnames'].append(name)
+          trendingStreamsResult['imagenums'].append(numpics)
+          trendingStreamsResult['image'].append(imageURL)
+        logging.info('Top Three Trending Streams :' + str(trendingStreamsResult))
+        #trendingStreamHtml = generatetrendingstreams(trendingStreamsResult)
+        trendingStreamHtml = generatetrendingstreamslinks(trendingStreamsResult)
+        logging.info('Trending Stream table html :' + str(trendingStreamHtml))
 
-      fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
-      #logging.info("HTML Page: " + fullhtml)
-    self.response.write(fullhtml)
+        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + TRENDING_PAGE_STYLE + (TRENDING_STREAMS_HTML % (trendingStreamHtml)) + TRENDING_REPORT_HTML + "</body></html>"
+        #logging.info("HTML Page: " + fullhtml)
+      self.response.write(fullhtml)
 
 class SocialPage(webapp2.RequestHandler):
   def get(self):
@@ -1635,8 +1694,9 @@ class CronJobHandler(webapp.RequestHandler):
   def sendTrendEmail(self, content):
     #self.response.write('<html><body>Cron job successful.. </body></html>')
     emailAddress = "ragha@utexas.edu"
+    #emailAddress = "sadaf.syed@utexas.edu"
 
-    message = mail.EmailMessage(sender="amy_hindman@yahoo.com", subject="Connexus Trends Digest - APT")
+    message = mail.EmailMessage(sender="sh.sadaf@gmail.com", subject="Connexus Trends Digest - APT")
 
     if not mail.is_email_valid(emailAddress):
       logging.info("The email is not valid.")
