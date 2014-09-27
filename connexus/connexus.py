@@ -708,7 +708,9 @@ class CreatePage(webapp2.RequestHandler):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
     if user:
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + CREATE_STREAM_HTML
+      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+      fullhtml = template.render(templateVars) + CREATE_STREAM_HTML
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
@@ -716,7 +718,9 @@ class CreatePage(webapp2.RequestHandler):
 
 class ViewPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> View page coming soon</body></html>"
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars) + "<br><br><br> View page does not support HTTP get.</body></html>"
     self.response.write(fullhtml)
 
   def post(self):
@@ -734,9 +738,10 @@ class ViewPage(webapp2.RequestHandler):
       jsonresult = json.loads(result.content)
       imagelinks = generateimagelinks(jsonresult['picurls'])
       logging.info("ViewStream call result: " + str(result.content))
-      self.response.write((HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_STREAM_HTML % (str(streamname),imagelinks, str(pagerange[0]),str(pagerange[1]))))
-      logging.info('HTML written')
-
+      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+      fullhtml = template.render(templateVars) + (VIEW_STREAM_HTML % (str(streamname),imagelinks, str(pagerange[0]),str(pagerange[1])))
+      self.response.write(fullhtml)
 
 
 class SearchPage(webapp2.RequestHandler):
@@ -746,12 +751,13 @@ class SearchPage(webapp2.RequestHandler):
     logging.info('request: ' + str(self.request))
     searchString = self.request.get('searchString')
     logging.info('searchString is :' + searchString)
-
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars)
     try:
       if searchString == "":
         logging.info('searchString is null')
         fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
-        self.response.write(fullhtml)
       else:
         logging.info('searchString is not null')
         searchParams = json.dumps({'streamname':searchString})
@@ -790,16 +796,14 @@ class SearchPage(webapp2.RequestHandler):
           logging.info('Search stream page html: ' + searchStreamHtml)
           length = len(searchedStreamsResult['streamnames'])
           searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
-          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
-          self.response.write(fullhtml)
+          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
         else:
           searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
-          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
-          self.response.write(fullhtml)
+          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
     except:
       searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
-      self.response.write(fullhtml)
+      fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
+    self.response.write(fullhtml)
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
@@ -876,12 +880,16 @@ class TrendingPage(webapp2.RequestHandler):
 
 class SocialPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Social page coming soon</body></html>"
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars) + "<br><br><br> Social page coming soon</body></html>"
     self.response.write(fullhtml)
 
 class ErrorPage(webapp2.RequestHandler):
   def get(self):
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + "<br><br><br> Error: you tried to create a new stream whose name is the same as an existing stream, operation did not complete.</body></html>"
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars) + "<br><br><br> Error: you tried to create a new stream whose name is the same as an existing stream, operation did not complete.</body></html>"
     self.response.write(fullhtml)
 
 class ViewAllStreamsPage(webapp2.RequestHandler):
@@ -895,7 +903,9 @@ class ViewAllStreamsPage(webapp2.RequestHandler):
     urllist = resultjson['coverurls']
     streamnames = resultjson['streamlist']
     allimageshtml = generateallimagelinks(urllist,streamnames)
-    fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + (VIEW_ALL_STREAM_HTML % allimageshtml)
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars) + (VIEW_ALL_STREAM_HTML % allimageshtml)
     self.response.write(fullhtml)
 
 #Sample function, we may not use
@@ -1313,7 +1323,10 @@ class UploadImage(webapp2.RequestHandler):
 
 class Error(webapp2.RequestHandler):
   def get(self):
-    self.request.write(HEADER_HTML + "<br><br><br> Create page coming soon</body></html>")
+    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    fullhtml = template.render(templateVars) + "<br><br><br> Error: page coming soon</body></html>"
+    self.request.write(fullhtml)
 
 class ViewAllStreams(webapp2.RequestHandler):
   def post(self):
