@@ -1,0 +1,32 @@
+{% autoescape false %}
+<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
+<input id="Streamname" name="Streamname" type="text" readonly="readonly" value="{{streamname}}'s Stream">
+<br>
+
+<div><table class="tg"><tr>
+{{picturelist}}
+    <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
+  </tr>
+</table>
+</div>
+
+<input id="Pagerange" name="Pagerange" type="text" readonly="readonly" value="Showing images: [{{rangestart}}-{{rangeend}}]"><br>
+<div>
+	<br>
+	<br>
+	<table class="tg">
+		<label class="description" for="Comments">Comments</label>
+		<br>
+		<tr><textarea id="Comments" name="Comments" class="element textarea medium"></textarea></tr>
+		<tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
+        <tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td></tr>
+    </table>
+    <br>
+    <br>
+</div>
+<class="buttons"><input type="hidden" name="form_id" value="903438"/>
+<input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe"/>
+</>
+</body>
+</html>
+{% endautoescape %}

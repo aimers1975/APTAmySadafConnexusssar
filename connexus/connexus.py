@@ -551,8 +551,11 @@ class ViewPageHandler(webapp2.RequestHandler):
           newend = jsonresult['pagerange'][1]
           imagelinks = generateimagelinks(jsonresult['picurls']) 
         template = JINJA_ENVIRONMENT.get_template('index.jinja')
+        template2 = JINJA_ENVIRONMENT.get_template('viewstreampage.html')
         templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
-        fullhtml = template.render(templateVars) + (VIEW_STREAM_HTML % (str(streamname),imagelinks,str(newstart),str(newend)))
+        templateVars2 = {"streamname":str(streamname),"picturelist":imagelinks, "rangestart":str(newstart),"rangeend":str(newend)}
+        #fullhtml = template.render(templateVars) + (VIEW_STREAM_HTML % (str(streamname),imagelinks,str(newstart),str(newend)))
+        fullhtml = template.render(templateVars) + template2.render(templateVars2)
         self.response.write(fullhtml)
     except:
       logging.info("Problem uploading file")
