@@ -438,7 +438,7 @@ class MainPage(webapp2.RequestHandler):
     logging.info("Template path is: " + str(os.path.dirname(__file__)))
     logging.info("Template path is: " + str(os.path.dirname(__file__)) + '/templates')
     logging.info("Current user is: " + str(user))
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     if user:
       fullhtml = template.render(templateVars)
@@ -535,7 +535,7 @@ class ViewPageHandler(webapp2.RequestHandler):
           newstart = jsonresult['pagerange'][0]
           newend = jsonresult['pagerange'][1]
           imagelinks = generateimagelinks(jsonresult['picurls']) 
-        template = JINJA_ENVIRONMENT.get_template('index.jinja')
+        template = JINJA_ENVIRONMENT.get_template('index.html')
         template2 = JINJA_ENVIRONMENT.get_template('viewstreampage.html')
         templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
         templateVars2 = {"streamname":str(streamname),"picturelist":imagelinks, "rangestart":str(newstart),"rangeend":str(newend)}
@@ -613,7 +613,7 @@ class MgmtPage(webapp2.RequestHandler):
     mystreamshtml = generatestreamsiownlist(myupdatelist)
     mysubscribeshtml = generatestreamssubscribed(myupdatelist2)
     if user:
-      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      template = JINJA_ENVIRONMENT.get_template('index.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
       fullhtml = template.render(templateVars) + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
       self.response.write(fullhtml)
@@ -625,7 +625,7 @@ class CreatePage(webapp2.RequestHandler):
     user = users.get_current_user()
     logging.info("Current user is: " + str(user))
     if user:
-      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      template = JINJA_ENVIRONMENT.get_template('index.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
       createtemplate = JINJA_ENVIRONMENT.get_template('createpage.html')
       fullhtml = template.render(templateVars) + createtemplate.render()
@@ -636,7 +636,7 @@ class CreatePage(webapp2.RequestHandler):
 
 class ViewPage(webapp2.RequestHandler):
   def get(self):
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars) + "<br><br><br> View page does not support HTTP get.</body></html>"
     self.response.write(fullhtml)
@@ -656,7 +656,7 @@ class ViewPage(webapp2.RequestHandler):
       jsonresult = json.loads(result.content)
       imagelinks = generateimagelinks(jsonresult['picurls'])
       logging.info("ViewStream call result: " + str(result.content))
-      template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      template = JINJA_ENVIRONMENT.get_template('index.html')
       template2 = JINJA_ENVIRONMENT.get_template('viewstreampage.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
       templateVars2 = {"streamname":str(streamname),"picturelist":imagelinks, "rangestart":str(pagerange[0]),"rangeend":str(pagerange[1])}
@@ -671,7 +671,7 @@ class SearchPage(webapp2.RequestHandler):
     logging.info('request: ' + str(self.request))
     searchString = self.request.get('searchString')
     logging.info('searchString is :' + searchString)
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars)
     try:
@@ -730,7 +730,7 @@ class TrendingPage(webapp2.RequestHandler):
     logging.info('request :' + str(self.request))
     global cron_rate
     cronRateStr = self.request.get('cronRate')
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     if cronRateStr == "":
       logging.info("No Cron rate was selected")
@@ -801,14 +801,14 @@ class TrendingPage(webapp2.RequestHandler):
 
 class SocialPage(webapp2.RequestHandler):
   def get(self):
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars) + "<br><br><br> Social page coming soon</body></html>"
     self.response.write(fullhtml)
 
 class ErrorPage(webapp2.RequestHandler):
   def get(self):
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars) + "<br><br><br> Error: you tried to create a new stream whose name is the same as an existing stream, operation did not complete.</body></html>"
     self.response.write(fullhtml)
@@ -824,7 +824,7 @@ class ViewAllStreamsPage(webapp2.RequestHandler):
     urllist = resultjson['coverurls']
     streamnames = resultjson['streamlist']
     allimageshtml = generateallimagelinks(urllist,streamnames)
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars) + (VIEW_ALL_STREAM_HTML % allimageshtml)
     self.response.write(fullhtml)
@@ -1244,7 +1244,7 @@ class UploadImage(webapp2.RequestHandler):
 
 class Error(webapp2.RequestHandler):
   def get(self):
-    template = JINJA_ENVIRONMENT.get_template('index.jinja')
+    template = JINJA_ENVIRONMENT.get_template('index.html')
     templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
     fullhtml = template.render(templateVars) + "<br><br><br> Error: page coming soon</body></html>"
     self.request.write(fullhtml)
