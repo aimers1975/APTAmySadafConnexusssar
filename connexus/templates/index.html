@@ -1,0 +1,24 @@
+{% autoescape false %}
+<!DOCTYPE html><html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Connex.us!</title>
+	<link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
+</head>
+
+<body>
+<div id="titleconnex">Connex.us!</div>
+<div>
+<ul id="list">
+<li class="horizontal first"><a href="http://{{ app_id }}/MgmtPage">Manage</a></li>  
+<li class="horizontal"><a href="http://{{ app_id }}/CreatePage">Create</a></li>
+<li class="horizontal"><a href="http://{{ app_id }}/ViewAllStreamsPage">View</a></li>
+<li class="horizontal first"><a href="http://{{ app_id }}/SearchPage">Search</a></li>
+<li class="horizontal"><a href="http://{{ app_id }}/TrendingPage">Trending</a></li>
+<li class="horizontal"><a href="http://{{ app_id }}/SocialPage">Social</a></li>
+</ul>
+</div>
+{{ other_html }}
+</body>
+</html>
+{% endautoescape %}
