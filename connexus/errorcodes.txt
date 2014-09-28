@@ -1,6 +1,0 @@
-0 - Success
-1 - Streamname already exists
-2 - Missing logged in user information
-3 - Streamname cannot be empty string
-4 - Stream to delete does not exist
-5 - Error during delete

@@ -1,9 +1,39 @@
 
 #titleconnex {
 	background-color: #99FFFF; font-family: Arial, sans-serif; height: 65px; border-radius: 5px; font-color: #663399; font-size: 50px; margin-top: auto; margin-bottom: auto;
-}
-    
+}    
 
 #list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; font-family: Arial, sans-serif; background-color: #FFCC99;}
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; font-family: Arial, sans-serif; font-size: 24px; border-radius: 5px; background-color: #FFCC99;}
 .first { border-left: none; padding-left: 0; }
+
+.description {font-family: Arial, sans-serif; font-size: 18px;}
+
+.button_text {font-family: Arial, sans-serif; font-size: 18px;}
+
+#ownstreams {font-family: Arial, sans-serif; font-size: 24px; font-weight: bold;}
+
+#subscribestreams {font-family: Arial, sans-serif; font-size: 24px; font-weight: bold;}
+
+#trendingstreams {font-family: Arial, sans-serif; font-size: 18px;}
+
+#aside {font-family: Arial, sans-serif; font-size: 18px;}
+
+#updaterate2 {font-family: Arial, sans-serif; font-size: 18px;}
+
+#Filename {font-family: Arial, sans-serif; font-size: 18px;}
+
+#Label  {font-family: Arial, sans-serif; font-size: 18px; border: none;}
+
+#Searchsubmit {font-family: Arial, sans-serif; font-size: 18px;}
+
+#resultstring {font-family: Arial, sans-serif; font-size: 18px;}
+
+#view {font-family: Arial, sans-serif; font-size: 18px;}
+
+#searchinput {font-family: Arial, sans-serif; font-size: 18px;}
+
+#Pagerange {font-family: Arial, sans-serif; font-size: 18px; border: none;}
+
+#Streamname {font-family: Arial, sans-serif; border: none; font-size:24px; font-weight: bold; width: 600px;}
+

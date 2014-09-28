@@ -1,1 +1,0 @@
-{"streamstodelete": ["amy1", "amy2"]}

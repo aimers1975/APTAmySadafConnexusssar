@@ -48,13 +48,13 @@ first_run = False
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
-<input id="Streamname" name="Streamname" type="text" input style="font-size:25px" readonly="readonly" value="%s's Stream"><br>
+<input id="Streamname" name="Streamname" type="text" readonly="readonly" value="%s's Stream"><br>
 <div><table class="tg"><tr>
 %s
     <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
   </tr>
 </table></div>
-<input id="Pagerange" name="Pagerange" type="text" input style="font-size:10px" readonly="readonly" value="Showing images: [%s-%s]"><br>
+<input id="Pagerange" name="Pagerange" type="text" readonly="readonly" value="Showing images: [%s-%s]"><br>
 <div><br><br><table class="tg"><label class="description" for="Comments">Comments</label><br><tr><textarea id="Comments" name="Comments" class="element textarea 
 
 medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
@@ -69,12 +69,12 @@ VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHan
 </body></html>"""
 
 #Todo take out td height
-MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
+MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><div id="ownstreams"><h3>Streams I Own:</h3></div>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:5px 5px; height: 18px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal; height: 18px; padding:5px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
+.tg td{font-family:Arial, sans-serif;font-size:18px;padding:5px 5px; height: 18px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal; height: 18px; padding:5px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
 <table class="tg">
   <tr>
     <th class="tg-031e">Name</th>
@@ -90,6 +90,7 @@ text-decoration: underline;
 border: none;
 color: blue;
 cursor: pointer;
+font-size: 18px;
 }
 </style>
 %s
@@ -98,13 +99,13 @@ cursor: pointer;
 
 <class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
 <input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
-<h3>Streams I subscribe to</h3>
+<div id="subscribestreams"><h3>Streams I Subscribe To:</h3></div>
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+.tg td{font-family:Arial, sans-serif;font-size:18px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
 </style>
 <table class="tg">
   <tr>
@@ -150,13 +151,15 @@ TRENDING_PAGE_STYLE = """
     width:250px;
     float:right;
     padding:5px; 
+    font-family: Arial, sans-serif; 
+    font-size: 18px;
 }
 </style>
 """
 
 TRENDING_STREAMS_HTML = """
 <div id="form_container"><form><div class="form_description"></div><div id="section">
-  <H2>Top 3 Trending Streams</H2>
+  <div id="trendingstreams"><H2>Top 3 Trending Streams</H2></div>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
@@ -174,20 +177,20 @@ TRENDING_STREAMS_HTML = """
 TRENDING_REPORT_HTML = """
 <div id="form_container"><form><div class="form_description"></div><div id="aside">
     <br>
-    <p> Email Trending Report </p>
+    <div id="trending"><H2>Email Trending Report<H2></div>
     <input type="checkbox" name="cronRate" value="No"> No reports<br>
     <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
     <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
     <input type="checkbox" name="cronRate" value="Day"> Every day<br>
-    <input type="submit" value="Update Rate">
+    <input id="updaterate2" class="buttons" type="submit" value="Update Rate">
 </div>
 """
 
 SEARCH_STREAMS_HTML = """
 <div id="form_container"><form><div class="form_description"></div><div id="aside">
    <form action="/SearchStreams" method="post">
-     <input name="searchString" placeholder="Stream Name:">
-     <input type="submit" value="Search">
+     <input id="searchinput" name="searchString" placeholder="Stream Name:">
+     <input id="Searchsubmit" type="submit" value="Search">
    </form>
 </div>
 """
@@ -242,9 +245,9 @@ def olderthanhour(checktimestring):
 
 def generateallimagelinks(urllist,streamnamelist):
   BEGIN_ROW = '<tr>'
-  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
   LINK2 = '" width=225 height=225 name="Streamname" value="'
-  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
 
@@ -316,9 +319,9 @@ def generatetrendingstreams(trendinglist):
 
 def generatetrendingstreamslinks(trendinglist):
   BEGIN_ROW = '<tr>'
-  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
-  LINK2 = '" width=225 height=225 name="Streamname" value="'
-  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
+  LINK2 = '" width=225 height=225 name="StreamsLink" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
 
@@ -344,9 +347,9 @@ def generatesearchedstreams(searchlist):
 
 def generatesearchedstreamslinks(searchlist):
   BEGIN_ROW = '<tr>'
-  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
   LINK2 = '" width=225 height=225 name="Streamname" value="'
-  LINK3 = '"/><br><input id="Label" name="Label" type="text" input style="font-size:10px" readonly="readonly" value="'
+  LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
 
@@ -722,7 +725,7 @@ class SearchPage(webapp2.RequestHandler):
           searchStreamHtml = generatesearchedstreamslinks(searchedStreamsResult)
           logging.info('Search stream page html: ' + searchStreamHtml)
           length = len(searchedStreamsResult['streamnames'])
-          searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
+          searchMsg = "<p id='resultstring'>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
           fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
         else:
           searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
@@ -966,7 +969,7 @@ class CreateStream(webapp2.RequestHandler):
         stream = Stream(parent=ndb.Key('connexusssar', 'connexusssar'))
         stream.streamname = streamname
 
-        creationdate = str(datetime.now())
+        creationdate = str(datetime.now().date())
         stream.creationdate = creationdate
         logging.info('\nCreation date: ' + str(creationdate))
 
@@ -1193,7 +1196,7 @@ class UploadImage(webapp2.RequestHandler):
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
-    creationdate = str(datetime.now())
+    creationdate = str(datetime.now().date())
     #decode the image
     imagefile = encodedimage.decode('base64')
     #create an ID for the image - may not need this....
