@@ -1,0 +1,63 @@
+<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
+<body><head><h1>Connex.us</h1></head>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Style Test</title>
+<style type="text/css">
+#list 
+.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
+.first { border-left: none; padding-left: 0; }
+</style>
+</head>
+
+<div>
+<body>
+<!--Need to add links for pages once done-->
+"""<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><h3>Streams I own</h3>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Delete</th>
+  </tr>
+<!--will need to dynamically generate each ITEM based on streamlist-->
+<style>
+.submitLink {
+background-color: transparent;
+text-decoration: underline;
+border: none;
+color: blue;
+cursor: pointer;
+}
+</style>
+%s
+</table>
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
+<h3>Streams I subscribe to</h3>
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+<table class="tg">
+  <tr>
+    <th class="tg-031e">Name</th>
+    <th class="tg-031e">Last Picture</th>
+    <th class="tg-031e">Number of Pictures</th>
+    <th class="tg-031e">Views</th>
+    <th class="tg-031e">Unsubscribe</th>
+  </tr>
+%s
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe" /></></body></html>"""
