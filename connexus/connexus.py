@@ -451,6 +451,7 @@ class ViewPageHandler(webapp2.RequestHandler):
     logging.info('Test View page handler:')
     try:
       streamname = self.request.get('Streamname')
+      logging.info("Request: " + str(self.request))
       streamname = streamname.split("'s Str")[0]
       logging.info("Streamname is: " + str(streamname))
       oldpagerange = self.request.get('Pagerange')
@@ -468,28 +469,37 @@ class ViewPageHandler(webapp2.RequestHandler):
       if (str(upload) == 'Upload'):
         logging.info('Got into upload?')
         try:
-          imagefile = self.request.get('Filename')
-          filename = self.request.params["Filename"].filename 
-          picdata = imagefile.encode("base64")
-          logging.info("filename: " + str(filename))
-          (name,extension) = os.path.splitext(filename)
-          contenttype = ""
-          extension = extension.lower()
-          if extension == '.gif':
-            contenttype = 'image/gif'
-          elif extension == '.jpg':
-            contenttype = 'image/jpeg'
-          elif extension == '.png':
-            contenttype = 'image/png'
-          else:
-            contenttype = None
-          logging.info("Content type is: " + str(contenttype))
-          if not contenttype == None:
-            comments = self.request.get('Comments')
-          mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
-          url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
-          result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
-          logging.info("upload image result: " + str(result.content))
+          imagefile = self.request.get('files[]')
+          logging.info("single is: " + str(imagefile))
+          files = self.request.POST.multi.__dict__['_items']
+          logging.info("multi is " + str(files))
+          for afile in files:
+            if afile[0] == 'files[]':
+              logging.info("Found an image:" + str(afile.filename))
+              imagefile = afile[1]
+              filename = afile.filename
+          #filename = self.request.params["files[]"].filename 
+              picdata = imagefile.encode("base64")
+              logging.info("filename: " + str(filename))
+              (name,extension) = os.path.splitext(filename)
+              logging.info("extention: " + str(extension))
+              contenttype = ""
+              extension = extension.lower()
+              if extension == '.gif':
+                contenttype = 'image/gif'
+              elif extension == '.jpg':
+                contenttype = 'image/jpeg'
+              elif extension == '.png':
+                contenttype = 'image/png'
+              else:
+                contenttype = None
+              logging.info("Content type is: " + str(contenttype))
+              if not contenttype == None:
+                comments = self.request.get('Comments')
+              mydata = json.dumps({"uploadimage": picdata, "streamname": streamname, "contenttype": contenttype, "comments": comments, "filename": filename})
+              url = 'http://' + AP_ID_GLOBAL + '/UploadImage'
+              result = urlfetch.fetch(url=url, payload=mydata, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+              logging.info("upload image result: " + str(result.content))
         except:
           logging.info("No file selected error")
         else:
@@ -642,6 +652,32 @@ class ViewPage(webapp2.RequestHandler):
     self.response.write(fullhtml)
 
   def post(self):
+      BAD_SCRIPT = """<!-- The template to display files available for upload -->
+<script id="template-upload" type="text/x-tmpl">
+{% for (var i=0, file; file=o.files[i]; i++) { %}
+    <tr class="template-upload fade">
+        <td>
+            <span class="preview"></span>
+        </td>
+        <td>
+            <p class="name">{%=file.name%}</p>
+            <strong class="error"></strong>
+        </td>
+        <td>
+            <p class="size">Processing...</p>
+            <div class="progress"></div>
+        </td>
+        <td>
+            {% if (!i && !o.options.autoUpload) { %}
+                <button class="start" disabled>Start</button>
+            {% } %}
+            {% if (!i) { %}
+                <button class="cancel">Cancel</button>
+            {% } %}
+        </td>
+    </tr>
+{% } %}
+</script>"""
       data = json.loads(self.request.body)
       logging.info('Json data sent to this function: ' + str(data))
       streamname = data['streamname']
@@ -659,7 +695,7 @@ class ViewPage(webapp2.RequestHandler):
       template = JINJA_ENVIRONMENT.get_template('index.html')
       template2 = JINJA_ENVIRONMENT.get_template('viewstreampage.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
-      templateVars2 = {"streamname":str(streamname),"picturelist":imagelinks, "rangestart":str(pagerange[0]),"rangeend":str(pagerange[1])}
+      templateVars2 = {"streamname":str(streamname),"badscript": BAD_SCRIPT, "picturelist":imagelinks, "rangestart":str(pagerange[0]),"rangeend":str(pagerange[1])}
       fullhtml = template.render(templateVars) + template2.render(templateVars2)
       self.response.write(fullhtml)
 
