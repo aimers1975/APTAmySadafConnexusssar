@@ -474,10 +474,12 @@ class ViewPageHandler(webapp2.RequestHandler):
           files = self.request.POST.multi.__dict__['_items']
           logging.info("multi is " + str(files))
           for afile in files:
+            logging.info("Afile is: " + str(afile))
+            logging.info("Type is : " + str(type(afile)))
             if afile[0] == 'files[]':
-              logging.info("Found an image:" + str(afile.filename))
-              imagefile = afile[1]
-              filename = afile.filename
+              filename = afile[1].filename
+              imagefile = afile[1].value
+              logging.info(str(imagefile))
           #filename = self.request.params["files[]"].filename 
               picdata = imagefile.encode("base64")
               logging.info("filename: " + str(filename))
