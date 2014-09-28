@@ -47,21 +47,6 @@ first_run = False
 
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
-VIEW_STREAM_HTML = """<form action="/ViewPageHandler" method="post" enctype="multipart/form-data"></div>
-<input id="Streamname" name="Streamname" type="text" readonly="readonly" value="%s's Stream"><br>
-<div><table class="tg"><tr>
-%s
-    <th class="tg-031e"><class="buttons"><input id="More_Pictures" class="button_text" type="submit" name="More_Pictures" value="More Pictures" /></th>
-  </tr>
-</table></div>
-<input id="Pagerange" name="Pagerange" type="text" readonly="readonly" value="Showing images: [%s-%s]"><br>
-<div><br><br><table class="tg"><label class="description" for="Comments">Comments</label><br><tr><textarea id="Comments" name="Comments" class="element textarea 
-
-medium"></textarea></tr><tr><th class="tg-031e"><input id="Filename" name="Filename" class="element file" type="file"/></th></tr>
-<tr><td class="tg-031e"><class="buttons"><input id="Upload" class="button_text" type="submit" name="Upload" value="Upload" /></td></tr></table><br><br></div>
-<class="buttons"><input type="hidden" name="form_id" value="903438" /><input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe" />
-</></body></html>"""
-
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
 %s
@@ -672,8 +657,10 @@ class ViewPage(webapp2.RequestHandler):
       imagelinks = generateimagelinks(jsonresult['picurls'])
       logging.info("ViewStream call result: " + str(result.content))
       template = JINJA_ENVIRONMENT.get_template('index.jinja')
+      template2 = JINJA_ENVIRONMENT.get_template('viewstreampage.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
-      fullhtml = template.render(templateVars) + (VIEW_STREAM_HTML % (str(streamname),imagelinks, str(pagerange[0]),str(pagerange[1])))
+      templateVars2 = {"streamname":str(streamname),"picturelist":imagelinks, "rangestart":str(pagerange[0]),"rangeend":str(pagerange[1])}
+      fullhtml = template.render(templateVars) + template2.render(templateVars2)
       self.response.write(fullhtml)
 
 
