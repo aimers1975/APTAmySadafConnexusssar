@@ -320,7 +320,7 @@ def generatetrendingstreams(trendinglist):
 def generatetrendingstreamslinks(trendinglist):
   BEGIN_ROW = '<tr>'
   BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
-  LINK2 = '" width=225 height=225 name="StreamsLink" value="'
+  LINK2 = '" width=225 height=225 name="Streamname" value="'
   LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
