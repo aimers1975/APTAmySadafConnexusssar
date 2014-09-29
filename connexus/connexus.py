@@ -45,37 +45,13 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
 %s
 </table>
 </body></html>"""
-
-HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>           
-<body><head><h1>Connex.us</h1></head>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Style Test</title>
-<style type="text/css">
-#list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
-.first { border-left: none; padding-left: 0; }
-</style>
-</head>
-
-<div>
-<body>
-<!--Need to add links for pages once done-->
-<ul id="list">
-<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
-<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
-<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
-<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
-<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
-</ul>"""
 
 #Todo take out td height
 MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><div id="ownstreams"><h3>Streams I Own:</h3></div>
@@ -196,7 +172,7 @@ TRENDING_REPORT_HTML = """
 """
 
 SEARCH_STREAMS_HTML = """
-<div id="aside">
+<div id="form_container"><form><div class="form_description"></div><div id="aside">
    <form action="/SearchStreams" method="post">
      <input id="searchinput" name="searchString" placeholder="Stream Name:">
      <input id="Searchsubmit" type="submit" value="Search">
@@ -240,30 +216,6 @@ ALL_STREAMS_HTML = """
 </table>
 <div>
 """
-
-S_HEADER_HTML = """<!DOCTYPE html><html><head><title>Connex.us!</title></head>
-<div id="form_container"><form><div class="form_description"></div>            
-<body><head><h1>Connex.us</h1></head>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Style Test</title>
-<style type="text/css">
-#list 
-.horizontal { display: inline; border-left: 2px solid; padding-left: 0.8em; padding-right: 0.8em; }
-.first { border-left: none; padding-left: 0; }
-</style>
-</head>
-</div>
-<body>
-<!--Need to add links for pages once done-->
-<ul id="list">
-<li class="horizontal first"><a href="http://%s/MgmtPage">Manage</a></li>  
-<li class="horizontal"><a href="http://%s/CreatePage">Create</a></li>
-<li class="horizontal"><a href="http://%s/ViewAllStreamsPage">View</a></li>
-<li class="horizontal first"><a href="http://%s/SearchPage">Search</a></li>
-<li class="horizontal"><a href="http://%s/TrendingPage">Trending</a></li>
-<li class="horizontal"><a href="http://%s/SocialPage">Social</a></li>
-</ul>"""
 
 def olderthanhour(checktimestring):
   hourago = datetime.now() - timedelta(minutes=30)
@@ -380,7 +332,7 @@ def generatesearchedstreams(searchlist):
 
 def generatesearchedstreamslinks(searchlist):
   BEGIN_ROW = '<tr>'
-  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="Streamname" input type="image" src="'
+  BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamLink" input type="image" src="'
   LINK2 = '" width=225 height=225 name="Streamname" value="'
   LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
@@ -756,12 +708,16 @@ class SearchPage(webapp2.RequestHandler):
     logging.info('request: ' + str(self.request))
     searchString = self.request.get('searchString')
     logging.info('searchString is :' + searchString)
+    template = JINJA_ENVIRONMENT.get_template('index.html')   
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }    
+    fullhtml = template.render(templateVars)
 
     try:
       if searchString == "":
         logging.info('searchString is null')
-        fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
-        self.response.write(fullhtml)
+        fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + "</body></html>"
+        #fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
+        #self.response.write(fullhtml)
       else:
         logging.info('searchString is not null')
         searchParams = json.dumps({'streamname':searchString})
@@ -800,16 +756,19 @@ class SearchPage(webapp2.RequestHandler):
           logging.info('Search stream page html: ' + searchStreamHtml)
           length = len(searchedStreamsResult['streamnames'])
           searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
-          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
-          self.response.write(fullhtml)
+          #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          #self.response.write(fullhtml)
+          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
         else:
           searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
-          fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
-          self.response.write(fullhtml)
+          #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          #self.response.write(fullhtml)
+          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
     except:
       searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
-      fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
-      self.response.write(fullhtml)
+      #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
+      fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
+    self.response.write(fullhtml)
 
 
 
