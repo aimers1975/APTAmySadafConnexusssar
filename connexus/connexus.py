@@ -45,7 +45,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
@@ -71,11 +71,14 @@ MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" meth
 <style>
 .submitLink {
 background-color: transparent;
-text-decoration: underline;
+text-decoration: none;
 border: none;
-color: blue;
+color: black;
 cursor: pointer;
 font-size: 18px;
+}
+.submitLink:hover {
+color: blue;
 }
 </style>
 %s
@@ -231,7 +234,7 @@ def olderthanhour(checktimestring):
 def generateallimagelinks(urllist,streamnamelist):
   BEGIN_ROW = '<tr>'
   BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
-  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK2 = '" width=250 height=225 name="Streamname" value="'
   LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
@@ -305,7 +308,7 @@ def generatetrendingstreams(trendinglist):
 def generatetrendingstreamslinks(trendinglist):
   BEGIN_ROW = '<tr>'
   BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamsLink" input type="image" src="'
-  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK2 = '" width=250 height=225 name="Streamname" value="'
   LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
@@ -333,7 +336,7 @@ def generatesearchedstreams(searchlist):
 def generatesearchedstreamslinks(searchlist):
   BEGIN_ROW = '<tr>'
   BEGIN_LINK = '<th class="tg-031e"><class="buttons"><input id ="StreamLink" input type="image" src="'
-  LINK2 = '" width=225 height=225 name="Streamname" value="'
+  LINK2 = '" width=250 height=225 name="Streamname" value="'
   LINK3 = '"/><br><input id="Label" name="Label" type="text" readonly="readonly" value="'
   END_LINK = '"></th>'
   END_ROW = '</tr>'
@@ -755,7 +758,7 @@ class SearchPage(webapp2.RequestHandler):
           searchStreamHtml = generatesearchedstreamslinks(searchedStreamsResult)
           logging.info('Search stream page html: ' + searchStreamHtml)
           length = len(searchedStreamsResult['streamnames'])
-          searchMsg = "<p>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
+          searchMsg = "<p id='Label'>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
           #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
           #self.response.write(fullhtml)
           fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"

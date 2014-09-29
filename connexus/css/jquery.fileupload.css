@@ -13,6 +13,8 @@
 .fileinput-button {
   position: relative;
   overflow: hidden;
+  font-family: Arial, sans-serif; 
+  font-size: 18px;
 }
 .fileinput-button input {
   position: absolute;

@@ -13,6 +13,8 @@
 .fileupload-buttonbar .btn,
 .fileupload-buttonbar .toggle {
   margin-bottom: 5px;
+  font-family: Arial, sans-serif; 
+  font-size: 18px;
 }
 .progress-animated .progress-bar,
 .progress-animated .bar {
