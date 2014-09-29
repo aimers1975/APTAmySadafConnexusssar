@@ -74,11 +74,13 @@ h2 {
 
 #aside {font-family: Arial, sans-serif; font-size: 18px;}
 
+#StreamsLink {border-radius: 5px;}
+
 #updaterate2 {font-family: Arial, sans-serif; font-size: 18px;}
 
 #Filename {font-family: Arial, sans-serif; font-size: 18px;}
 
-#Label  {font-family: Arial, sans-serif; font-size: 18px; border: none;}
+#Label  {font-family: Arial, sans-serif; font-size: 18px; border: none; background-color: #C8C8C8; }
 
 #Searchsubmit {font-family: Arial, sans-serif; font-size: 18px;}
 
@@ -88,9 +90,9 @@ h2 {
 
 #searchinput {font-family: Arial, sans-serif; font-size: 18px;}
 
-#Pagerange {font-family: Arial, sans-serif; font-size: 18px; border: none;}
+#Pagerange {font-family: Arial, sans-serif; font-size: 18px; border: none; background-color: #C8C8C8;}
 
-#Streamname {font-family: Arial, sans-serif; border: none; font-size:24px; font-weight: bold; width: 600px;}
+#Streamname {font-family: Arial, sans-serif; border: none; font-size:24px; font-weight: bold; width: 600px; background-color: #C8C8C8;}
 
 
 
