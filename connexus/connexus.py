@@ -45,7 +45,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
