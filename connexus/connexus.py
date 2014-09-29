@@ -45,7 +45,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
@@ -144,7 +144,7 @@ TRENDING_PAGE_STYLE = """
 
 TRENDING_STREAMS_HTML = """
 <div id="form_container"><form><div class="form_description"></div><div id="section">
-  <div id="trendingstreams"><H2>Top 3 Trending Streams</H2></div>
+  <div id="trendingstreams"><H3>Top 3 Trending Streams</H3></div>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
 .tg tr {border:none;}
@@ -162,7 +162,7 @@ TRENDING_STREAMS_HTML = """
 TRENDING_REPORT_HTML = """
 <div id="form_container"><form><div class="form_description"></div><div id="aside">
     <br>
-    <div id="trending"><H2>Email Trending Report<H2></div>
+    <div id="trending"><H3>Email Trending Report<H3></div>
     <input type="checkbox" name="cronRate" value="No"> No reports<br>
     <input type="checkbox" name="cronRate" value="Five"> Every 5 minutes<br>
     <input type="checkbox" name="cronRate" value="Hour"> Every 1 hour<br>
