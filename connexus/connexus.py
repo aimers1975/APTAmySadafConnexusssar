@@ -53,62 +53,6 @@ VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHan
 </table>
 </body></html>"""
 
-#Todo take out td height
-MGMT_PAGE_HTML = """<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><div id="ownstreams"><h3>Streams I Own:</h3></div>
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:18px;padding:5px 5px; height: 18px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal; height: 18px; padding:5px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
-<table class="tg">
-  <tr>
-    <th class="tg-031e">Name</th>
-    <th class="tg-031e">Last Picture</th>
-    <th class="tg-031e">Number of Pictures</th>
-    <th class="tg-031e">Delete</th>
-  </tr>
-<!--will need to dynamically generate each ITEM based on streamlist-->
-<style>
-.submitLink {
-background-color: transparent;
-text-decoration: none;
-border: none;
-color: black;
-cursor: pointer;
-font-size: 18px;
-}
-.submitLink:hover {
-color: blue;
-}
-</style>
-%s
-</table>
-
-
-<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
-<div id="subscribestreams"><h3>Streams I Subscribe To:</h3></div>
-
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg tr {border:none;}
-.tg td{font-family:Arial, sans-serif;font-size:18px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
-.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
-</style>
-<table class="tg">
-  <tr>
-    <th class="tg-031e">Name</th>
-    <th class="tg-031e">Last Picture</th>
-    <th class="tg-031e">Number of Pictures</th>
-    <th class="tg-031e">Views</th>
-    <th class="tg-031e">Unsubscribe</th>
-  </tr>
-%s
-</table>
-
-<class="buttons"><input type="hidden" name="form_id" value="903438" /><br>
-<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe" /></></body></html>"""
-
 EMAIL_HTML = """\
 <html>
    <body>
@@ -203,7 +147,7 @@ SEARCH_RESULT_HTML = """
 NAME_LINK = '<class="buttons"><input type="hidden" name="form_id" value="903438" /><br><input id="view" class="submitLink" type="submit" name="view" value="'
 NAME_LINK2 = '" />'
 BEGIN = '<tr>'
-START_ITEM_HTML = '<td class="tg-031e">'
+START_ITEM_HTML = '<td>'
 END_ITEM_HTML = '</td>'
 
 ALL_STREAMS_HTML = """
@@ -272,8 +216,10 @@ def generateimagelinks(urllist):
     htmlstringfinal = htmlstringfinal + BEGIN + urllist[x] + END
   return htmlstringfinal
 
+
+
 def generatestreamsiownlist(updatelist):
-  START_CHECKBOX = '<td class="tg-031e"><input id="own" name="own" class="element checkbox" type="checkbox" value="'
+  START_CHECKBOX = '<td><input id="own" name="own" class="element checkbox" type="checkbox" value="'
   END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
@@ -283,7 +229,7 @@ def generatestreamsiownlist(updatelist):
   return htmlstringfinal
 
 def generatestreamssubscribed(updatelist):
-  START_CHECKBOX = '<td class="tg-031e"><input id="sub" name="sub" class="element checkbox" type="checkbox" value="'
+  START_CHECKBOX = '<td><input id="sub" name="sub" class="element checkbox" type="checkbox" value="'
   END_CHECKBOX = '" /></td></tr>'
   htmlstringfinal = ""
   length = len(updatelist['streamnames'])
@@ -448,7 +394,17 @@ class MainPage(webapp2.RequestHandler):
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
- 
+
+class Map(webapp2.RequestHandler):
+  def get(self):
+    template = JINJA_ENVIRONMENT.get_template('index.html')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    if user:
+      fullhtml = template.render(templateVars)
+      self.response.write(fullhtml)
+    else:
+      self.redirect(users.create_login_url(self.request.uri))
+
 class ViewPageHandler(webapp2.RequestHandler):
   def post(self):
     logging.info('Test View page handler:')
@@ -630,7 +586,9 @@ class MgmtPage(webapp2.RequestHandler):
     if user:
       template = JINJA_ENVIRONMENT.get_template('index.html')
       templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
-      fullhtml = template.render(templateVars) + (MGMT_PAGE_HTML % (mystreamshtml,mysubscribeshtml))
+      template2 = JINJA_ENVIRONMENT.get_template('mgmtpage.html')
+      templateVars2 = { "streamsown" : mystreamshtml, "streamssubscribe" : mysubscribeshtml }
+      fullhtml = template.render(templateVars) + template2.render(templateVars2)
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
@@ -1739,6 +1697,7 @@ application = webapp2.WSGIApplication([
     ('/SearchPage', SearchPage),
     ('/TrendingPage', TrendingPage),
     ('/SocialPage', SocialPage),
+    ('/Map', Map),
     ('/ViewAllStreamsPage', ViewAllStreamsPage),
     ('/ViewAllPageHandler', ViewAllPageHandler),
     ('/SubscribeStream', SubscribeStream),

@@ -3,7 +3,6 @@
 <head>
 	<meta charset="UTF-8" />
 	<title>Connex.us!</title>
-	<link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
     <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.1/themes/dark-hive/jquery-ui.css" id="theme">
 	<link rel="stylesheet" href="css/demo.css">
 	<style> /* Adjust the jQuery UI widget font-size: */
@@ -19,13 +18,16 @@
     <!-- CSS adjustments for browsers with JavaScript disabled -->
     <noscript><link rel="stylesheet" href="css/jquery.fileupload-noscript.css"></noscript>
     <noscript><link rel="stylesheet" href="css/jquery.fileupload-ui-noscript.css"></noscript>
+   <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+	<link type="text/css" rel="stylesheet" href="/stylesheets/main.css" />
 </head>
 
 <body>
-<div id="header">
-	<h2>Connex.us!</h2>
+<div id="headermain">
+	<h2 id="headermain">Connex.us!</h2>
 	<div id="navbar">
-		<ul id="list">
+		<ul id="listmain">
 			<li class="horizontal first"><a href="http://{{ app_id }}/MgmtPage">Manage</a></li>  
 			<li class="horizontal"><a href="http://{{ app_id }}/CreatePage">Create</a></li>
 			<li class="horizontal"><a href="http://{{ app_id }}/ViewAllStreamsPage">View</a></li>

@@ -17,7 +17,7 @@ h2 {
 	margin-top: -5px;
 }
 
-#header {
+#headermain {
 	position: relative;
 	top: -5px;
 	background-color: #009999;
@@ -59,6 +59,23 @@ h2 {
     border-radius: 5px;
 }
 
+ thead{
+ 	display:table-header-group
+ }
+
+ tr,img{
+ 	page-break-inside:avoid
+ }
+
+table{
+	border-spacing:0;
+	border-collapse:collapse
+}
+td,th{
+	padding:0;
+	font-size: 18px;
+}
+
 /* unvisited link */
 a:link {
     color: #000000;
@@ -80,19 +97,36 @@ a:active {
     text-decoration: none;
 }
 
-.first { border-left: none; padding-left: 0; }
+.first { 
+	border-left: none; 
+	padding-left: 0; 
+}
 
-.description {font-family: Arial, sans-serif; font-size: 18px;}
+.description {
+	font-family: Arial, sans-serif; 
+	font-size: 18px;}
 
-.button_text {font-family: Arial, sans-serif; font-size: 18px;}
+.button_text {
+	font-family: Arial, sans-serif; 
+	font-size: 18px;}
 
-.form_container { background-color: transparent;}
+.form_container { 
+	background-color: transparent;
+}
 
-.start {font-family: Arial, sans-serif; font-size: 18px;}
+.start {
+	font-family: Arial, sans-serif; 
+	font-size: 18px;
+}
 
-.tg {background-color: transparent; border-radius: 5px;}
+.tg {
+	background-color: transparent; 
+	border-radius: 5px;
+}
 
-#list {font-color: #000000;}
+#listmain {
+	font-color: #000000;}
+
 
 #ownstreams {font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; background-color: transparent;}
 
@@ -121,6 +155,8 @@ a:active {
 #Pagerange {font-family: Arial, sans-serif; font-size: 18px; border: none; background-color: #C8C8C8;}
 
 #Streamname {font-family: Arial, sans-serif; border: none; font-size:24px; font-weight: bold; width: 600px; background-color: #C8C8C8;}
+.col-xs-1,.col-sm-1,.col-md-1,.col-lg-1,.col-xs-2,.col-sm-2,.col-md-2,.col-lg-2,.col-xs-3,.col-sm-3,.col-md-3,.col-lg-3,.col-xs-4,.col-sm-4,.col-md-4,.col-lg-4,.col-xs-5,.col-sm-5,.col-md-5,.col-lg-5,.col-xs-6,.col-sm-6,.col-md-6,.col-lg-6,.col-xs-7,.col-sm-7,.col-md-7,.col-lg-7,.col-xs-8,.col-sm-8,.col-md-8,.col-lg-8,.col-xs-9,.col-sm-9,.col-md-9,.col-lg-9,.col-xs-10,.col-sm-10,.col-md-10,.col-lg-10,.col-xs-11,.col-sm-11,.col-md-11,.col-lg-11,.col-xs-12,.col-sm-12,.col-md-12,.col-lg-12{position:relative;min-height:1px;padding-right:15px;padding-left:15px}
+
 
 
 

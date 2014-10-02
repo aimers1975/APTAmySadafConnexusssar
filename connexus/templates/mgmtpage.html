@@ -1,0 +1,66 @@
+{% autoescape false %}
+<div id="form_container"><form action="/HandleMgmtForm" method="post"><div class="form_description"></div><div id="ownstreams"><h3>Streams I Own:</h3></div>
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:18px;padding:5px 5px; height: 18px; border-right: solid 1px; border-left: solid 1px; border-top:none; border-bottom:none; border-width:0px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal; height: 18px; padding:5px 5px;border-style:none;border-width:0px;overflow:hidden;word-break:normal;}</style>
+
+<table class="table">
+  <div class="row">
+    <div class="col-md-6">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Last Picture</th>
+          <th>Number of Pictures</th>
+          <th>Delete</th>
+        </tr>
+      <thead>
+<!--will need to dynamically generate each ITEM based on streamlist-->
+<style>
+.submitLink {
+  background-color: transparent;
+  text-decoration: none;
+  border: none;
+  color: black;
+  cursor: pointer;
+  font-size: 18px;
+}
+.submitLink:hover {
+  color: #009999;
+}
+</style>
+{{streamsown}}
+</div>
+</div>
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" />
+<input id="delete_checked" class="button_text" type="submit" name="delete_checked" value="Delete" /></></body></html>
+<div id="subscribestreams"><h3>Streams I Subscribe To:</h3></div>
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg tr {border:none;}
+.tg td{font-family:Arial, sans-serif;font-size:18px;padding:10px 5px;border-style:solid;border-right: solid 1px; border-left: solid 1px; border-top: none; border-bottom: none; border-width:1px;overflow:hidden;word-break:normal;}
+.tg th{font-family:Arial, sans-serif;font-size:18px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;}
+</style>
+
+<table class="table">
+  <div class="row">
+    <div class="col-md-6">
+      <thead>
+  <tr>
+    <th>Name</th>
+    <th>Last Picture</th>
+    <th>Number of Pictures</th>
+    <th>Views</th>
+    <th>Unsubscribe</th>
+  </tr>
+{{streamssubscribe}}
+</table>
+
+<class="buttons"><input type="hidden" name="form_id" value="903438" />
+<input id="unsubscribe_checked" class="button_text" type="submit" name="unsubscribe_checked" value="Unsubscribe" /></></body></html>
+{% endautoescape %}
