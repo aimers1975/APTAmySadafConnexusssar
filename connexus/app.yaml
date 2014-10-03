@@ -4,14 +4,25 @@ runtime: python27
 api_version: 1
 threadsafe: false
 
+builtins:
+- deferred: on
+
 handlers:
 - url: /test.*
   login: admin
   script: gaeunit.py
 - url: /stylesheets
   static_dir: stylesheets
+- url: /(favicon\.ico|robots\.txt)
+  static_files: static/\1
+  upload: static/(.*)
+  expiration: '1d'
 - url: /css
   static_dir: css
+- url: /server
+  static_dir: server
+- url: /fonts
+  static_dir: fonts  
 - url: /img
   static_dir: img
 - url: /js
