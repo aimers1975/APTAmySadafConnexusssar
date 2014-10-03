@@ -388,9 +388,10 @@ class MainPage(webapp2.RequestHandler):
     logging.info("Template path is: " + str(os.path.dirname(__file__)) + '/templates')
     logging.info("Current user is: " + str(user))
     template = JINJA_ENVIRONMENT.get_template('index.html')
-    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }
+    template2 = JINJA_ENVIRONMENT.get_template('mappage.html')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : ""}
     if user:
-      fullhtml = template.render(templateVars)
+      fullhtml = template.render(templateVars) + template2.render()
       self.response.write(fullhtml)
     else:
       self.redirect(users.create_login_url(self.request.uri))
