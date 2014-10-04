@@ -443,69 +443,80 @@ class UploadHandler(webapp2.RequestHandler):
             present_query = Stream.query(Stream.streamname == streamname)
             existsstream = present_query.get()
             logging.info('Query returned: ' + str(existsstream))
-            comments = self.request.get('comments')
-            creationdate = str(datetime.now().date())
-            imageid = str(uuid.uuid1())
-            bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
-            logging.info("My bucket name is: " + str(bucket_name))
-            bucket = '/' + bucket_name
-            filename = bucket + '/' + streamname + '/' + imageid
-        except:
-            logging.info("Couldn't get streamname from post")
-        for name, fieldStorage in self.request.POST.items():
-            if type(fieldStorage) is unicode:
-                continue
-            result = {}
+            if not existsstream == None:
+              comments = self.request.get('comments')
+              creationdate = str(datetime.now().date())
+              imageid = str(uuid.uuid1())
+              bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+              logging.info("My bucket name is: " + str(bucket_name))
+              bucket = '/' + bucket_name
+              filename = bucket + '/' + streamname + '/' + imageid
+              for name, fieldStorage in self.request.POST.items():
+                if type(fieldStorage) is unicode:
+                  continue
+                result = {}
             #result is name, type, size
             # Save filename to result array
-            result['name'] = re.sub(
-                r'^.*\\',
-                '',
-                fieldStorage.filename
-            ) 
-            logging.info("Filename is: " + str(result['name']))
-            result['type'] = fieldStorage.type
-            logging.info("Content type is: " + str(result['type']))
-            result['size'] = self.get_file_size(fieldStorage.file)
-            if self.validate(result):
+                result['name'] = re.sub(
+                    r'^.*\\',
+                    '',
+                    fieldStorage.filename
+                ) 
+                logging.info("Filename is: " + str(result['name']))
+                result['type'] = fieldStorage.type
+                logging.info("Content type is: " + str(result['type']))
+                result['size'] = self.get_file_size(fieldStorage.file)
+                if self.validate(result):
                 #write to cloud storage
                 #blob_key = str(
                  #   self.write_blob(fieldStorage.value, result))
             # Create a GCS file with GCS client.
-                with gcs.open(filename, 'w') as f:
-                    f.write(fieldStorage.value)
+                  with gcs.open(filename, 'w') as f:
+                      f.write(fieldStorage.value)
             # Blobstore API requires extra /gs to distinguish against blobstore files.
-                blobstore_filename = '/gs' + filename
-                blob_key = blobstore.create_gs_key(blobstore_filename)
-                logging.info("write file to cloud storage and store url in stream")
-                logging.info('Maybe append urls to delete')
-                blob_keys.append(blob_key)
-                result['deleteType'] = 'DELETE'
-                logging.info("Host URL: " + str(self.request.host_url))
-                logging.info("secure host URL: " + str(self.request.host_url.startswith('https')))
-                result['deleteUrl'] = self.request.host_url + '/UploadHandler' +\
-                    '?key=' + urllib.quote(blob_key, '')
-                if (IMAGE_TYPES.match(result['type'])):
-                    try:
-                        result['url'] = images.get_serving_url(
-                            blob_key,
-                        )
-                        result['thumbnailUrl'] = result['url'] +\
-                            THUMBNAIL_MODIFICATOR
-                        logging.info("Thumbnail url is: " + str(result['thumbnailUrl']))
-                    except:  # Could not get an image serving url
-                        pass
-                if not 'url' in result:
-                    result['url'] = self.request.host_url +\
-                        '/' + blob_key + '/' + urllib.quote(
-                            result['name'].encode('utf-8'), '')
-                    logging.info("Result URL is: " + str(result['url']))
-            results.append(result)
-        deferred.defer(
-            cleanup,
-            blob_keys,
-            _countdown=EXPIRATION_TIME
-        )
+                  blobstore_filename = '/gs' + filename
+                  blob_key = blobstore.create_gs_key(blobstore_filename)
+                  logging.info("write file to cloud storage and store url in stream")
+                  logging.info('Maybe append urls to delete')
+                  blob_keys.append(blob_key)
+                  result['deleteType'] = 'DELETE'
+                  logging.info("Host URL: " + str(self.request.host_url))
+                  logging.info("secure host URL: " + str(self.request.host_url.startswith('https')))
+                  result['deleteUrl'] = self.request.host_url + '/UploadHandler' +\
+                      '?key=' + urllib.quote(blob_key, '')
+                  if (IMAGE_TYPES.match(result['type'])):
+                      try:
+                          result['url'] = images.get_serving_url(
+                              blob_key,
+                          )
+                          result['thumbnailUrl'] = result['url'] +\
+                              THUMBNAIL_MODIFICATOR
+                          logging.info("Thumbnail url is: " + str(result['thumbnailUrl']))
+                          myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+                          myimage.imageid = imageid
+                          myimage.imagefilename = result['name']
+                          myimage.comments = comments
+                          myimage.imagefileurl = result['url']
+                          myimage.imagecreationdate = creationdate
+                          myimage.imagestreamname = streamname
+                          myimage.put()
+                          logging.info('Saved this image to images')
+                          thisimagelist = existsstream.imagelist
+                          thisimagelist.append(myimage)
+                          existsstream.imagelist = thisimagelist
+                          existsstream.put()
+                      except:  
+                          # Could not get an image serving url
+                          logging.info('Could not get an image serving Url')
+                          pass
+                  if not 'url' in result:
+                      result['url'] = self.request.host_url +\
+                          '/' + blob_key + '/' + urllib.quote(
+                              result['name'].encode('utf-8'), '')
+                      logging.info("Result URL is: " + str(result['url']))
+              results.append(result)
+        except:
+            logging.info("exception uploading files")
         return results
 
     def options(self):
@@ -537,13 +548,32 @@ class UploadHandler(webapp2.RequestHandler):
         self.response.write(s)
 
     def delete(self):
-        try:
-            streamname = self.request.get('Streamname')
-            logging.info('streamname is: ' + str(streamname))
-        except:
-            logging.info("Couldn't get streamname from post")
+        logging.info(str(self.request))
         logging.info("Need to delete files from cloud and images")
         key = self.request.get('key') or ''
+        thisurl = images.get_serving_url(key)
+        logging.info("url to search: " + str(thisurl))
+        deleteimage_query = Image.query(Image.imagefileurl == thisurl)
+        deleteimage = deleteimage_query.get()
+        logging.info('Query returned: ' + str(deleteimage))
+        deleteimagestream = deleteimage.imagestreamname
+        logging.info("Delete stream: " + str(deleteimagestream))
+        present_query = Stream.query(Stream.streamname == deleteimagestream)
+        existsstream = present_query.get()
+        logging.info("Stream found: " + str(existsstream))
+        imagelist = existsstream.imagelist
+        for myimage in imagelist:
+          if myimage.imagefileurl == thisurl:
+            logging.info("Removing myimage: " + str(myimage))
+            imagelist.remove(myimage)
+            break
+        logging.info("updated imagelist: " + str(imagelist))
+        deleteimagekey = deleteimage.key
+        deleteimagekey.delete()
+        existsstream.imagelist = imagelist
+        logging.info('Updated imagelist writing back: ' + str(imagelist))
+        existsstream.put()
+        logging.info('Query returned: ' + str(existsstream))        
         blobstore.delete(key)
         s = json.dumps({key: True}, separators=(',', ':'))
         if 'application/json' in self.request.headers.get('Accept'):
@@ -711,6 +741,7 @@ class Image(ndb.Model):
   comments = ndb.StringProperty()
   imagefileurl = ndb.StringProperty()
   imagecreationdate = ndb.StringProperty()
+  imagestreamname = ndb.StringProperty()
 
 class Stream(ndb.Model):
   streamname = ndb.StringProperty(indexed=True)
@@ -1443,6 +1474,7 @@ class UploadImage(webapp2.RequestHandler):
         myimage.comments = comments
         myimage.imagefileurl = imagefileurl
         myimage.imagecreationdate = creationdate
+        myimage.imagestreamname = streamname
         myimage.put()
         thisimagelist = existsstream.imagelist
         thisimagelist.append(myimage)
