@@ -15,7 +15,17 @@
 </div>
 
 <input id="Pagerange" name="Pagerange" type="text" readonly="readonly" value="Showing images: [{{rangestart}}-{{rangeend}}]"/><br>
+<div>
 
+    <table class="tg">
+        <label class="description" for="Comments">Comments</label>
+        <br>
+        <tr><textarea id="Comments" name="Comments" class="element textarea medium"></textarea></tr>
+    </table>
+</div>
+<class="buttons"><input type="hidden" name="form_id" value="903438"/>
+<input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe"/>
+</>
     <form id="fileupload" action="/UploadHandler" method="POST" enctype="multipart/form-data">
 
         <!-- Redirect browsers with JavaScript disabled to the origin page -->
@@ -120,17 +130,6 @@ $('#theme-switcher').change(function () {
 });
 </script>
 
-<div>
-
-	<table class="tg">
-		<label class="description" for="Comments">Comments</label>
-		<br>
-		<tr><textarea id="Comments" name="Comments" class="element textarea medium"></textarea></tr>
-    </table>
-</div>
-<class="buttons"><input type="hidden" name="form_id" value="903438"/>
-<input id="Subscribe" class="button_text" type="submit" name="Subscribe" value="Subscribe"/>
-</>
 </body>
 </html>
 
