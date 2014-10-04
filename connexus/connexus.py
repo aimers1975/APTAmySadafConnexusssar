@@ -469,22 +469,26 @@ class UploadHandler(webapp2.RequestHandler):
             result['size'] = self.get_file_size(fieldStorage.file)
             if self.validate(result):
                 #write to cloud storage
-                blob_key = str(
-                    self.write_blob(fieldStorage.value, result)
-                )
+                #blob_key = str(
+                 #   self.write_blob(fieldStorage.value, result))
+            # Create a GCS file with GCS client.
+                with gcs.open(filename, 'w') as f:
+                    f.write(fieldStorage.value)
+            # Blobstore API requires extra /gs to distinguish against blobstore files.
+                blobstore_filename = '/gs' + filename
+                blob_key = blobstore.create_gs_key(blobstore_filename)
                 logging.info("write file to cloud storage and store url in stream")
                 logging.info('Maybe append urls to delete')
                 blob_keys.append(blob_key)
                 result['deleteType'] = 'DELETE'
+                logging.info("Host URL: " + str(self.request.host_url))
+                logging.info("secure host URL: " + str(self.request.host_url.startswith('https')))
                 result['deleteUrl'] = self.request.host_url + '/UploadHandler' +\
                     '?key=' + urllib.quote(blob_key, '')
                 if (IMAGE_TYPES.match(result['type'])):
                     try:
                         result['url'] = images.get_serving_url(
                             blob_key,
-                            secure_url=self.request.host_url.startswith(
-                                'https'
-                            )
                         )
                         result['thumbnailUrl'] = result['url'] +\
                             THUMBNAIL_MODIFICATOR
