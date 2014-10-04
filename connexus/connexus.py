@@ -432,27 +432,52 @@ class UploadHandler(webapp2.RequestHandler):
         return files.blobstore.get_blob_key(blob)
 
     def handle_upload(self):
+        logging.info('In handle upload. Self request is: ' + str(self.request))
         results = []
         blob_keys = []
+        try:
+            streamname = self.request.get('Streamname')
+            streamname = streamname.split("'s Str")[0]
+            logging.info('streamname is: ' + str(streamname))
+            logging.info('Check if stream exists')
+            present_query = Stream.query(Stream.streamname == streamname)
+            existsstream = present_query.get()
+            logging.info('Query returned: ' + str(existsstream))
+            comments = self.request.get('comments')
+            creationdate = str(datetime.now().date())
+            imageid = str(uuid.uuid1())
+            bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+            logging.info("My bucket name is: " + str(bucket_name))
+            bucket = '/' + bucket_name
+            filename = bucket + '/' + streamname + '/' + imageid
+        except:
+            logging.info("Couldn't get streamname from post")
         for name, fieldStorage in self.request.POST.items():
             if type(fieldStorage) is unicode:
                 continue
             result = {}
+            #result is name, type, size
+            # Save filename to result array
             result['name'] = re.sub(
                 r'^.*\\',
                 '',
                 fieldStorage.filename
-            )
+            ) 
+            logging.info("Filename is: " + str(result['name']))
             result['type'] = fieldStorage.type
+            logging.info("Content type is: " + str(result['type']))
             result['size'] = self.get_file_size(fieldStorage.file)
             if self.validate(result):
+                #write to cloud storage
                 blob_key = str(
                     self.write_blob(fieldStorage.value, result)
                 )
+                logging.info("write file to cloud storage and store url in stream")
+                logging.info('Maybe append urls to delete')
                 blob_keys.append(blob_key)
                 result['deleteType'] = 'DELETE'
-                result['deleteUrl'] = self.request.host_url +\
-                    '/?key=' + urllib.quote(blob_key, '')
+                result['deleteUrl'] = self.request.host_url + '/UploadHandler' +\
+                    '?key=' + urllib.quote(blob_key, '')
                 if (IMAGE_TYPES.match(result['type'])):
                     try:
                         result['url'] = images.get_serving_url(
@@ -463,12 +488,14 @@ class UploadHandler(webapp2.RequestHandler):
                         )
                         result['thumbnailUrl'] = result['url'] +\
                             THUMBNAIL_MODIFICATOR
+                        logging.info("Thumbnail url is: " + str(result['thumbnailUrl']))
                     except:  # Could not get an image serving url
                         pass
                 if not 'url' in result:
                     result['url'] = self.request.host_url +\
                         '/' + blob_key + '/' + urllib.quote(
                             result['name'].encode('utf-8'), '')
+                    logging.info("Result URL is: " + str(result['url']))
             results.append(result)
         deferred.defer(
             cleanup,
@@ -488,25 +515,37 @@ class UploadHandler(webapp2.RequestHandler):
 
     def post(self):
         if (self.request.get('_method') == 'DELETE'):
+            logging.info("Got a delete")
             return self.delete()
+        logging.info("Post request: " + str(self.request))
         result = {'files': self.handle_upload()}
+        logging.info("Post result: " + str(result))
         s = json.dumps(result, separators=(',', ':'))
         redirect = self.request.get('redirect')
         if redirect:
+            logging.info("redirecting after post and result from handle upload")
             return self.redirect(str(
                 redirect.replace('%s', urllib.quote(s, ''), 1)
             ))
         if 'application/json' in self.request.headers.get('Accept'):
             self.response.headers['Content-Type'] = 'application/json'
+        logging.info("Post result writing is: " + str(s))
         self.response.write(s)
 
     def delete(self):
+        try:
+            streamname = self.request.get('Streamname')
+            logging.info('streamname is: ' + str(streamname))
+        except:
+            logging.info("Couldn't get streamname from post")
+        logging.info("Need to delete files from cloud and images")
         key = self.request.get('key') or ''
         blobstore.delete(key)
         s = json.dumps({key: True}, separators=(',', ':'))
         if 'application/json' in self.request.headers.get('Accept'):
             self.response.headers['Content-Type'] = 'application/json'
-        self.response.write(s)
+        logging.info('Result json from delete: ' + str(s))
+        self.response.write(s) 
 
 
 class DownloadHandler(blobstore_handlers.BlobstoreDownloadHandler):
