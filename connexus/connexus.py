@@ -369,12 +369,14 @@ def create_file(filename, file, contenttype):
 
 #temporary helper to cleanup test files written
 def delete_files():
-    logging.info('Deleting files...\n' + str(tmp_filenames_to_clean_up))
-    for filename in tmp_filenames_to_clean_up:
-      logging.info('Deleting file %s\n' % filename)
+    #logging.info('Deleting files...\n' + str(tmp_filenames_to_clean_up))
+    #for filename in tmp_filenames_to_clean_up:
+    #  logging.info('Deleting file %s\n' % filename)
       try:
-        gcs.delete(filename)
+        #gcs.delete(filename)
+        gcs.delete('/connexusssar.appspot.com/ColorFlag/066e0e0f-4bd7-11e4-9d1d-710007c381d9')
       except gcs.NotFoundError:
+        logging.info("File not found error")
         pass
 
 def delete_images(imagefiles):
@@ -382,7 +384,8 @@ def delete_images(imagefiles):
   for filename in imagefiles:
     logging.info('Deleting image: ' + str(filename))
     try:
-      gcs.delete(filename)
+      #gcs.delete(filename)
+      blobstore.delete(filename)
       logging.info('Finished deleting file')
     except gcs.NotFoundError:
       pass
@@ -1711,8 +1714,10 @@ class DeleteStreams(webapp2.RequestHandler):
         for thisimage in rawimagestodelete:
           thisurl = thisimage.imagefileurl
           logging.info("Imageurl object: " + str(thisurl))
-          parturl = thisurl.split('http://storage.googleapis.com')[1]
+          parturl = thisurl.split('/')
           logging.info('Parturl: ' + str(parturl))
+          parturl = parturl[3]
+          logging.info("Final parturl: " + str(parturl))
           imagestodelete.append(parturl)
         logging.info('Deleting: ' + str(imagestodelete))
         delete_images(imagestodelete)
