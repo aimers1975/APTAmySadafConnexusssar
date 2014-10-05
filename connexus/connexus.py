@@ -380,12 +380,11 @@ def delete_files():
         pass
 
 def delete_images(imagefiles):
-  logging.info('Deleting image: ' + str(imagefiles))
   for filename in imagefiles:
     logging.info('Deleting image: ' + str(filename))
     try:
-      #gcs.delete(filename)
-      blobstore.delete(filename)
+      gcs.delete(filename)
+      #blobstore.delete(filename)
       logging.info('Finished deleting file')
     except gcs.NotFoundError:
       pass
@@ -448,6 +447,18 @@ class UploadHandler(webapp2.RequestHandler):
             logging.info('Query returned: ' + str(existsstream))
             if not existsstream == None:
               comments = self.request.get('comments')
+              try:
+                logging.info("Headers is: " + str(self.request.headers))
+                latlong = self.request.headers['X-Appengine-Citylatlong']
+                coord = latlong.split(',')
+                latitude = float(coord[0])
+                longitude = float(coord[1])
+                logging.info("latitude: " + str(latitude))
+                logging.info("longitude: " + str(longitude))
+              except:
+                logging.info("Couldn't get location, defaulting to pflugerville tx")
+                latitude = 30.439370
+                longitude = -97.620004
               creationdate = str(datetime.now().date())
               imageid = str(uuid.uuid1())
               bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
@@ -501,6 +512,8 @@ class UploadHandler(webapp2.RequestHandler):
                           myimage.comments = comments
                           myimage.imagefileurl = result['url']
                           myimage.imagecreationdate = creationdate
+                          myimage.imagelatitude = latitude
+                          myimage.imagelongitude = longitude
                           myimage.imagestreamname = streamname
                           myimage.put()
                           logging.info('Saved this image to images')
@@ -604,8 +617,6 @@ class DownloadHandler(blobstore_handlers.BlobstoreDownloadHandler):
 class MainPage(webapp2.RequestHandler):
   def get(self):
     user = users.get_current_user()
-    logging.info("Template path is: " + str(os.path.dirname(__file__)))
-    logging.info("Template path is: " + str(os.path.dirname(__file__)) + '/templates')
     logging.info("Current user is: " + str(user))
     template = JINJA_ENVIRONMENT.get_template('index.html')
     template2 = JINJA_ENVIRONMENT.get_template('mappage.html')
@@ -745,6 +756,8 @@ class Image(ndb.Model):
   imagefileurl = ndb.StringProperty()
   imagecreationdate = ndb.StringProperty()
   imagestreamname = ndb.StringProperty()
+  imagelatitude = ndb.FloatProperty()
+  imagelongitude = ndb.FloatProperty()
 
 class Stream(ndb.Model):
   streamname = ndb.StringProperty(indexed=True)
@@ -1696,6 +1709,7 @@ class DeleteStreams(webapp2.RequestHandler):
       deletestreams = data['streamnamestodelete']
       #iterate through list of streams input
       stream_keys = list()
+      image_keys = list()
       logging.info('Before for loop')
       #TODO - there is a bug where image structured objecs are not deleted from the datestore...todo if we havemydata time
       for deletestream in deletestreams:
@@ -1713,16 +1727,26 @@ class DeleteStreams(webapp2.RequestHandler):
         imagestodelete = list()
         for thisimage in rawimagestodelete:
           thisurl = thisimage.imagefileurl
-          logging.info("Imageurl object: " + str(thisurl))
-          parturl = thisurl.split('/')
-          logging.info('Parturl: ' + str(parturl))
-          parturl = parturl[3]
-          logging.info("Final parturl: " + str(parturl))
-          imagestodelete.append(parturl)
+          image_query = Image.query(Image.imagefileurl == thisurl)
+          logging.info('Created image delete query')
+          mydeleteimage = image_query.get()
+          logging.info('Image to delete returned from query: ' + str(mydeleteimage))
+          image_keys.append(mydeleteimage.key)
+          bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+          logging.info("My bucket name is: " + str(bucket_name))
+          deletefilename = '/' + bucket_name + '/' + mydeleteimage.imagestreamname + '/' + mydeleteimage.imageid
+          #logging.info("Imageurl object: " + str(thisurl))
+          #parturl = thisurl.split('/')
+          #logging.info('Parturl: ' + str(parturl))
+          #parturl = parturl[3]
+          #logging.info("Final parturl: " + str(parturl))
+          #imagestodelete.append(parturl)
+          imagestodelete.append(deletefilename)
         logging.info('Deleting: ' + str(imagestodelete))
         delete_images(imagestodelete)
       logging.info('Trying to really delete from db: ' + str(stream_keys))
       ndb.delete_multi(stream_keys)
+      ndb.delete_multi(image_keys)
       logging.info('deleted from db')
       payload = {'errorcode':0}
       result = json.dumps(payload)
