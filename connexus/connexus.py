@@ -612,6 +612,13 @@ class DownloadHandler(blobstore_handlers.BlobstoreDownloadHandler):
 
 ###end file upload code
 
+class GetAllImages(webapp2.RequestHandler):
+  def get(self):
+    user = users.get_current_user()
+    logging.info("In Get all images: Current user is: " + str(user))
+    data = json.dumps({"id":1,"content":"Hello, World!"})
+    logging.info("Data writing: " + str(data))
+    self.response.write(data)
 
 
 class MainPage(webapp2.RequestHandler):
@@ -1995,6 +2002,7 @@ application = webapp2.WSGIApplication([
     ('/ViewAllStreamsPage', ViewAllStreamsPage),
     ('/ViewAllPageHandler', ViewAllPageHandler),
     ('/SubscribeStream', SubscribeStream),
+    ('/GetAllImages', GetAllImages),
     ('/ViewAllStreams', ViewAllStreams),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
