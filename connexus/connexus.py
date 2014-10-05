@@ -616,10 +616,22 @@ class GetAllImages(webapp2.RequestHandler):
   def get(self):
     user = users.get_current_user()
     logging.info("In Get all images: Current user is: " + str(user))
-    data = json.dumps({"id":1,"content":"Hello, World!"})
+    creationdatelist = list()
+    imageurllist = list()
+    imagelatitudelist = list()
+    imagelongitudelist = list()
+    allimagesquery = Image.query(Image.imagefileurl != "")
+    allimages = allimagesquery.fetch()
+    for thisimage in allimages:
+      logging.info("This image is: " + str(thisimage))
+      imageurllist.append(thisimage.imagefileurl)
+      creationdatelist.append(thisimage.imagecreationdate)
+      imagelatitudelist.append(thisimage.imagelatitude)
+      imagelongitudelist.append(thisimage.imagelongitude)
+    logging.info("All images is: " + str(allimages))
+    data = json.dumps({"id":1,"content":"Hello, World!","imageurllist":imageurllist,"creationdatelist":creationdatelist,"imagelatitudelist":imagelatitudelist,"imagelongitudelist":imagelongitudelist})
     logging.info("Data writing: " + str(data))
     self.response.write(data)
-
 
 class MainPage(webapp2.RequestHandler):
   def get(self):
