@@ -51,7 +51,7 @@ cron_rate = -1
 last_run_time = datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
@@ -1596,14 +1596,14 @@ class SearchStreams(webapp2.RequestHandler):
       
       searchResultList = list()
       for streamItem in listOfStreams:
-        if streamFilter in streamItem.streamname:
+        if streamFilterList in streamItem.streamname:
           searchResultList.append(self.convertStreamObjToList(streamItem))
           #logging.info('Stream found with name match: ' + str(streamItem))
 
       for streamItem in listOfStreams:
         tagList = streamItem.taglist
         for tag in tagList:
-          if streamFilter in tag:
+          if streamFilterList in tag:
             #if stream is not already in searchResultList then add it
             if self.alreadyExists(searchResultList, streamItem):
               logging.info('Stream ' + str(streamItem) + 'has been already found.')
