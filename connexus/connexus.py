@@ -1592,8 +1592,6 @@ class SearchStreams(webapp2.RequestHandler):
       listOfStreams = allstreams_query.fetch()
       logging.info('Query for all streams returned:' + str(listOfStreams))
 
-      streamFilter = streamFilterList[0]
-      
       searchResultList = list()
       for streamItem in listOfStreams:
         if streamFilterList in streamItem.streamname:
