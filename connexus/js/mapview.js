@@ -1,26 +1,50 @@
 ($(function() { 
-    demo.add(function() {
-	    $('#map_canvas').gmap({'zoom': 2, 'disableDefaultUI':true}).bind('init', function(evt, map) { 
-	    var bounds = map.getBounds();
-	    var southWest = bounds.getSouthWest();
-	    var northEast = bounds.getNorthEast();
-	    var lngSpan = northEast.lng() - southWest.lng();
-	    var latSpan = northEast.lat() - southWest.lat();
-	    for ( var i = 0; i < 10; i++ ) {
-		    $(this).gmap('addMarker', { 'position': new google.maps.LatLng(southWest.lat() + latSpan * Math.random(), southWest.lng() + lngSpan * Math.random()) } ).click(function() {
-			    $('#map_canvas').gmap('openInfoWindow', { content : 'Hello world!' }, this);
-		    });
-	    }
-	    $(this).gmap('set', 'MarkerClusterer', new MarkerClusterer(map, $(this).gmap('get', 'markers')));
-    });
-	}).load();
 
+    var imageurls = new Array();
+    var imagecreationdates = new Array();
+    var imagelatitudes = new Array();
+    var imagelongitudes = new Array();
+    var markers = [];
+    var markerhash = [];
+
+
+$(function() {
 	$.ajax({url: "/GetAllImages",success:function(data) {
 		console.log(data)
 		var json = JSON.parse(data);
-		$('.greeting-id').append(json.id);
-		$('.greeting-content').append(json.content);
-	}});
+        imagecreationdates = json.creationdatelist;
+        imagelatitudes = json.imagelatitudelist;
+        imagelongitudes = json.imagelongitudelist;
+        imageurls = json.imageurllist; 
+        console.log("in ajax call");
+   	    console.log("imageurls: " + imageurls);
+	    console.log("latitude: " + imagelatitudes);
+	    console.log("longitude: " + imagelongitudes);
+	    console.log("length is: " + imageurls.length);
+	    var yourStartLatLng = new google.maps.LatLng(31, -98);
+        $('#map_canvas').gmap({'center': yourStartLatLng});
+        console.log("imageurl length: " + imageurls.length);
 
-
-} (jQuery) ));
+        $('#map_canvas').gmap({'zoom': 2, 'disableDefaultUI':true}).bind('init', function(evt, map) {
+	        var markerCluster = new MarkerClusterer(map, markers);
+	        if (imageurls.length > 0) {    
+	            for ( var i = 0; i < imageurls.length; i++ ) {
+	        	    var contentstring = '<div id="content"><IMG SRC="' + imageurls[i] + '" ALT="some text" WIDTH=100 HEIGHT=100></div>';
+	        	    console.log('Image ' + i + ": " + contentstring);
+	        	    imagelat = imagelatitudes[i] + (i*.0002);
+	        	    var infowindow = new google.maps.InfoWindow({ content: contentstring });
+				    var myLatLng = new google.maps.LatLng(imagelat,imagelongitudes[i]);
+				    var imagemarker = new google.maps.Marker({
+				        position: myLatLng,
+				        map: map,
+				    });
+				    imagemarker['infowindow'] = new google.maps.InfoWindow({ content: contentstring});
+					console.log('Created marker');
+					markerCluster.addMarker(imagemarker)
+					google.maps.event.addListener(imagemarker, 'mouseover', function() { this['infowindow'].open(map, this); });
+                }
+            } 
+        });
+    }});
+});
+} (jQuery)));
