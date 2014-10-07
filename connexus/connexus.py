@@ -624,7 +624,7 @@ class GetAllImages(webapp2.RequestHandler):
     allimages = allimagesquery.fetch()
     for thisimage in allimages:
       logging.info("This image is: " + str(thisimage))
-      imageurllist.append(thisimage.imagefileurl)
+      imageurllist.append(thisimage.imagefileurl + '=s100')
       creationdatelist.append(thisimage.imagecreationdate)
       imagelatitudelist.append(thisimage.imagelatitude)
       imagelongitudelist.append(thisimage.imagelongitude)
