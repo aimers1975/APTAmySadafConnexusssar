@@ -966,19 +966,21 @@ class ViewPage(webapp2.RequestHandler):
 
 class SearchPage(webapp2.RequestHandler):
   def get(self):
-    #Retrieve top 3 trending streams
     url = 'http://' + AP_ID_GLOBAL + '/SearchStreams'
     logging.info('request: ' + str(self.request))
     searchString = self.request.get('searchString')
     logging.info('searchString is :' + searchString)
     template = JINJA_ENVIRONMENT.get_template('index.html')   
-    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }    
-    fullhtml = template.render(templateVars)
+    autocomplete_template = JINJA_ENVIRONMENT.get_template('autocompletescript.html')
+    templateVars = { "app_id" : AP_ID_GLOBAL, "other_html" : "" }  
+    autocompleteUrl = '"http://' + AP_ID_GLOBAL + '/SearchAutocompleteValues"'
+    autocompleteVars = {"autocompleteurl":autocompleteUrl}
+    fullhtml = template.render(templateVars) + autocomplete_template.render(autocompleteVars)
 
     try:
       if searchString == "":
         logging.info('searchString is null')
-        fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + "</body></html>"
+        fullhtml = template.render(templateVars) + autocomplete_template.render(autocompleteVars) + SEARCH_STREAMS_HTML + "</body></html>"
         #fullhtml = (S_HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + "</body></html>"
         #self.response.write(fullhtml)
       else:
@@ -1021,19 +1023,17 @@ class SearchPage(webapp2.RequestHandler):
           searchMsg = "<p id='Label'>" + str(length) + " results for " + str(searchString) + ", click on an image to view stream </p>"
           #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
           #self.response.write(fullhtml)
-          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          fullhtml = template.render(templateVars) + autocomplete_template.render(autocompleteVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
         else:
           searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
           #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
           #self.response.write(fullhtml)
-          fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
+          fullhtml = template.render(templateVars) + autocomplete_template.render(autocompleteVars) + SEARCH_STREAMS_HTML + searchMsg + (SEARCH_RESULT_HTML % (searchStreamHtml)) + "</body></html>"
     except:
       searchMsg = "<p> An Error occurred while searching for streams. Try again. </p>"
       #fullhtml = (HEADER_HTML % (AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL,AP_ID_GLOBAL)) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
-      fullhtml = template.render(templateVars) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
+      fullhtml = template.render(templateVars) + autocomplete_template.render(autocompleteVars) + SEARCH_STREAMS_HTML + searchMsg + "</body></html>"
     self.response.write(fullhtml)
-
-
 
 class TrendingPage(webapp2.RequestHandler):
   def get(self):
@@ -1586,6 +1586,38 @@ class ViewAllStreams(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+class SearchAutocompleteValues(webapp2.RequestHandler):
+  def get(self):
+    try:
+      logging.info('In SearchAutocompleteValues')
+      search = self.request.get('term')
+      logging.info('search term: ' + str(search))
+      url = 'http://' + AP_ID_GLOBAL + '/SearchStreams'
+      searchParams = json.dumps({'streamname':search})
+      searchResult = urlfetch.fetch(url=url, payload=searchParams, method=urlfetch.POST, headers={'Content-Type': 'application/json'}, deadline=30)
+      #logging.info('SearchStreams Result is: ' + str(searchResult.content))
+      searchedStreams = json.loads(searchResult.content)
+      logging.info('SearchStreams from service: ' + str(searchedStreams))
+      
+      stream_list = []
+
+      for stream in searchedStreams:
+         #logging.info('stream is: ' + str(stream))
+         value = stream['streamname']
+         #logging.info('value is :' + str(value))
+         u_dict = {'label': value, 'value': value}
+         #logging.info('u_dict is: ' + str(u_dict))
+         stream_list.append(u_dict)
+         #logging.info('stream_list is: ' + str(stream_list))
+
+      logging.info('Sreach Auto Complete Results: ' + str(stream_list))
+      payload = stream_list
+    except:
+      payload = {'errorcode':6}
+
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class SearchStreams(webapp2.RequestHandler):
   def alreadyExists(self, resultList, newItem):
     for item in resultList:
@@ -2014,6 +2046,7 @@ application = webapp2.WSGIApplication([
     ('/SubscribeStream', SubscribeStream),
     ('/GetAllImages', GetAllImages),
     ('/ViewAllStreams', ViewAllStreams),
+    ('/SearchAutocompleteValues', SearchAutocompleteValues),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
     ('/gcswrite', GCSHandler),
