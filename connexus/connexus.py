@@ -6,7 +6,8 @@ from google.appengine.ext import db
 from google.appengine.ext import blobstore, deferred
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
-from datetime import datetime,timedelta
+import datetime
+from datetime import timedelta
 from time import gmtime, strftime
 from google.appengine.ext import ndb
 import webapp2
@@ -21,6 +22,7 @@ import uuid
 import base64
 import string
 import jinja2
+
 
 #Probably not necessary to change default retry params, but here for example
 my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
@@ -48,10 +50,10 @@ ds_key = ndb.Key('connexusssar', 'connexusssar')
 cronrate = 'five'
 myimages = list()
 cron_rate = -1
-last_run_time = datetime.now()
+last_run_time = datetime.datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 VIEW_ALL_STREAM_HTML = """<div id="form_container"><form action="/ViewAllPageHandler" method="post"><div class="form_description"></div>
 <table class="tg">
@@ -171,7 +173,7 @@ ALL_STREAMS_HTML = """
 """
 
 def olderthanhour(checktimestring):
-  hourago = datetime.now() - timedelta(minutes=30)
+  hourago = datetime.datetime.now() - timedelta(minutes=30)
   if(checktimestring < str(hourago)):
     logging.info("checktimestring: " + str(checktimestring) + " hour ago: " + str(hourago))
     logging.info("returning true")
@@ -459,7 +461,7 @@ class UploadHandler(webapp2.RequestHandler):
                 logging.info("Couldn't get location, defaulting to pflugerville tx")
                 latitude = 30.439370
                 longitude = -97.620004
-              creationdate = str(datetime.now().date())
+              creationdate = str(datetime.datetime.now().date())
               imageid = str(uuid.uuid1())
               bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
               logging.info("My bucket name is: " + str(bucket_name))
@@ -620,12 +622,21 @@ class GetAllImages(webapp2.RequestHandler):
     imageurllist = list()
     imagelatitudelist = list()
     imagelongitudelist = list()
-    allimagesquery = Image.query(Image.imagefileurl != "")
+    #allimagesquery = Image.query(Image.imagefileurl != "")
+    allimagesquery = Image.query().order(Image.imagecreationdate)
     allimages = allimagesquery.fetch()
     for thisimage in allimages:
       logging.info("This image is: " + str(thisimage))
       imageurllist.append(thisimage.imagefileurl + '=s100')
-      creationdatelist.append(thisimage.imagecreationdate)
+      currentdate = datetime.datetime.now().date()
+      logging.info("Current date is: " + str(currentdate))
+      imagedate = datetime.datetime.strptime(thisimage.imagecreationdate, '%Y-%m-%d').date()
+      logging.info("Imagedate is: " + str(imagedate))
+      thisdelta = currentdate - imagedate
+      logging.info('Delta is: ' + str(thisdelta.days) + " type is: " + str(type(thisdelta.days)))
+      if(thisdelta.days < 366):
+        logging.info('Adding this image as less than a year')
+        creationdatelist.append(thisdelta.days)
       imagelatitudelist.append(thisimage.imagelatitude)
       imagelongitudelist.append(thisimage.imagelongitude)
     logging.info("All images is: " + str(allimages))
@@ -1261,7 +1272,7 @@ class CreateStream(webapp2.RequestHandler):
         stream = Stream(parent=ndb.Key('connexusssar', 'connexusssar'))
         stream.streamname = streamname
 
-        creationdate = str(datetime.now().date())
+        creationdate = str(datetime.datetime.now().date())
         stream.creationdate = creationdate
         logging.info('\nCreation date: ' + str(creationdate))
 
@@ -1394,7 +1405,7 @@ class ViewStream(webapp2.RequestHandler):
       #  except:
       #    logging.info('Date not found in datastore list: ' + str(date))
 
-        existsstreamdatelist.append(str(datetime.now()))
+        existsstreamdatelist.append(str(datetime.datetime.now()))
         existsstream.viewdatelistlength = len(existsstreamdatelist)
         existsstream.viewdatelist = existsstreamdatelist
         existsstream.put()
@@ -1488,7 +1499,7 @@ class UploadImage(webapp2.RequestHandler):
     contenttype = data['contenttype']
     imagefilename = data['filename']
     comments = data['comments']
-    creationdate = str(datetime.now().date())
+    creationdate = str(datetime.datetime.now().date())
     #decode the image
     imagefile = encodedimage.decode('base64')
     #create an ID for the image - may not need this....
@@ -1965,7 +1976,7 @@ class CronJobHandler(webapp.RequestHandler):
   def get(self):
     global last_run_time
     
-    current_run_time = datetime.now()
+    current_run_time = datetime.datetime.now()
     logging.info("Current Time: ")
     logging.info(current_run_time) 
     logging.info("Last run time: ")
@@ -1981,10 +1992,10 @@ class CronJobHandler(webapp.RequestHandler):
       trendingStreams = self.getTrendingStreams();
       content = "Top 3 Trending streams are : " + str(trendingStreams['streamnames'][0]) + ", " + str(trendingStreams['streamnames'][1]) + ", "+ str(trendingStreams['streamnames'][2])
       self.sendTrendEmail(content)
-      last_run_time = datetime.now()
+      last_run_time = datetime.datetime.now()
       logging.info("Email send after %d mins" % elapsedMins)
     elif cron_rate == -1:
-      last_run_time = datetime.now()
+      last_run_time = datetime.datetime.now()
       logging.info("Trending Emails are turned off.")
     else:
       logging.info("Elapsed mins: %d" % elapsedMins)
