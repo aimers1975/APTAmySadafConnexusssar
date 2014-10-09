@@ -86,7 +86,7 @@ $(document).ready(function () {
     $("#handle2").html(secondmonth + "/" + secondday + "/" + secondyear);
     $("#handle2").css("position","absolute");
     $("#handle2").css("top",position2.top+30);
-    $("#handle2").css("left",position2.left);
+    $("#handle2").css("left",position2.left-40);
 
      $( "#slider" ).on( "slidechange", function( event, ui ) {
 
@@ -127,7 +127,7 @@ $(document).ready(function () {
             $("#handle2").html(secondmonth + "/" + secondday + "/" + secondyear);
             $("#handle2").css("position","absolute");
             $("#handle2").css("top",position2.top+30);
-            $("#handle2").css("left",position2.left);
+            $("#handle2").css("left",position2.left-40);
 
             markerCluster.clearMarkers();
             console.log("clear markers");
