@@ -70,7 +70,7 @@ $(document).ready(function () {
     var position2 = slider2.offset();
     console.log("position is: " + position1.left + ' ' + position1.top);
     console.log("position is: " + position2.left + ' ' + position2.top);
-    seconddate.setDate(firstdate.getDate() - 365);
+    firstdate.setDate(firstdate.getDate() - 365);
     var firstday = firstdate.getDate();
     var firstmonth = firstdate.getMonth() + 1;
     var firstyear = firstdate.getFullYear();
