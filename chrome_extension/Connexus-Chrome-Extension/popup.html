@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body { 
+                min-width: 420px; 
+                overflow-x: hidden; 
+                font-family: Arial, sans-serif; 
+                font-size: 12px; 
+            }
+            input, textarea { 
+                width: 420px; 
+            }
+            input#save { 
+                font-weight: bold; width: auto; 
+            }
+        </style>
+        <script src="popup.js"></script>
+    </head>
+    <body onload="addimage()">
+        <form id="uploadimage">
+            <h2>Connexus Extension</h2>
+            <h3>Add pictures to a stream with a click</h3>
+            <img id="img1">
+            <input type="text" id="title" name="title" size="50" value="" placeholder="Stream to add to"/></p>
+            <input type="text" id="imgurl" name="imgurl" size="50" value="" /></p>
+
+            <script>
+            function addimage() {
+                var img = new Image();
+                img.src = document.getElementById("imgurl");
+                img1.appendChild(img);  
+            }
+            </script>
+
+            <textarea id="comments" name="comments" rows="3" cols="35" placeholder="Comments"></textarea></p>
+            <p>
+                <input id="save" type="submit" value="Upload" />
+                <span id="status-display"></span>
+            </p>
+        </form>
+    <script src="window.js"></script>
+    <script src="jquery.js"></script>
+    </body>
+</html>
