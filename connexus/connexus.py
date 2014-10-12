@@ -15,6 +15,7 @@ import logging
 import json
 import cgi
 import urllib
+import urllib2
 from urlparse import urlparse
 import re
 import os
@@ -53,7 +54,7 @@ cron_rate = -1
 last_run_time = datetime.datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -1548,6 +1549,137 @@ class UploadImage(webapp2.RequestHandler):
       payload = json.dumps({"errorcode":0})
     self.response.write(payload)
 
+class UploadUrlImage(webapp2.RequestHandler):
+
+  def read_file(self, filename):
+    self.response.write('Abbreviated file content (first line and last 1K):\n')
+    gcs_file = gcs.open(filename)
+    self.response.write(gcs_file.readline())
+    gcs_file.seek(-1024, os.SEEK_END)
+    self.response.write(gcs_file.read())
+    gcs_file.close()
+
+  def stat_file(self, filename):
+    self.response.write('File stat:\n')
+    stat = gcs.stat(filename)
+    self.response.write(repr(stat))
+
+  def create_files_for_list_bucket(self, bucket):
+    self.response.write('Creating more files for listbucket...\n')
+    filenames = [bucket + n for n in ['/foo1', '/foo2', '/bar', '/bar/1','/bar/2', '/boo/']]
+    for f in filenames:
+      create_file(f)
+
+  def list_bucket(self, bucket):
+    self.response.write('Listbucket result:\n')
+    page_size = 1
+    stats = gcs.listbucket(bucket + '/foo', max_keys=page_size)
+    while True:
+      count = 0
+      for stat in stats:
+        count += 1
+        self.response.write(repr(stat))
+        self.response.write('\n')
+      if count != page_size or count == 0:
+        break
+    stats = gcs.listbucket(bucket + '/foo', max_keys=page_size, marker=stat.filename)
+
+  def list_bucket_directory_mode(self, bucket):
+    self.response.write('Listbucket directory mode result:\n')
+    for stat in gcs.listbucket(bucket + '/b', delimiter='/'):
+      self.response.write('%r' % stat)
+      self.response.write('\n')
+      if stat.is_dir:
+        for subdir_file in gcs.listbucket(stat.filename, delimiter='/'):
+          self.response.write('  %r' % subdir_file)
+          self.response.write('\n')
+
+  def post(self):
+    #Get json data for image and stream ID.
+    try:
+      data = json.loads(self.request.body)
+      logging.info('this is what Im looking for: ' + str(data))
+    except:
+      logging.info('No json data with this request')
+    
+    imageurl = data['imageurl']
+    opener = urllib2.build_opener()
+    page1 = opener.open(imageurl)
+    imagefile = page1.read()
+    #imagefile = cStringIO.StringIO(urllib.urlopen(imageurl).read())
+    #imagefile = Image.open(StringIO(urllib.urlopen(imageurl).read()))
+    #imageFile = urllib2.urlopen(imageurl).read()
+    logging.info('Image is: ' + str(imagefile))
+    #encodedimage = data['imageurl'] 
+    #encodedImage = imgfile.encode("base64")   
+    #logging.info('Image is: ' + str(encodedImage))
+
+    streamname = data['streamname']
+    logging.info('Check if stream exists')
+    present_query = Stream.query(Stream.streamname == streamname)
+    existsstream = present_query.get()
+    logging.info('Query returned: ' + str(existsstream))
+    contenttype = data['contenttype']
+    #imagefilename = data['filename']
+    comments = data['comments']
+    creationdate = str(datetime.datetime.now().date())
+    #decode the image
+    #imagefile = encodedImage.decode('base64')
+    #create an ID for the image - may not need this....
+    imageid = str(uuid.uuid1())
+    bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+    logging.info("My bucket name is: " + str(bucket_name))
+    #create location string for image   
+    bucket = '/' + bucket_name
+    filename = bucket + '/' + streamname + '/' + imageid
+    try:
+      if not existsstream == None:
+        create_file(filename,imagefile,contenttype)
+        #create_file(filename,imgbytes,contenttype)
+        myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+        logging.info('Created imagefile')
+        imagefileurl = "http://storage.googleapis.com" + str(filename)
+        myimage.imageid = imageid
+        #myimage.imagefilename = imagefilename
+        myimage.comments = comments
+        myimage.imagefileurl = imagefileurl
+        myimage.imagecreationdate = creationdate
+        myimage.imagestreamname = streamname
+        myimage.put()
+        thisimagelist = existsstream.imagelist
+        thisimagelist.append(myimage)
+        existsstream.imagelist = thisimagelist
+        existsstream.put()
+        logging.info("Existing streams with image list: " + str(existsstream))
+        logging.info("Thisimagelist: " + str(thisimagelist))
+        payload = json.dumps({"errorcode":0})
+      else:
+        payload = json.dumps({'errorcode':7})
+        logging.info('Stream doesnt exist')
+
+
+      #self.read_file(filename)
+      #self.response.write('\n\n')
+      #self.stat_file(filename)
+      #self.response.write('\n\n')
+      #self.create_files_for_list_bucket(bucket)
+      #self.response.write('\n\n')
+      #self.list_bucket(bucket)
+      #self.response.write('\n\n')
+      #self.list_bucket_directory_mode(bucket)
+      #self.response.write('\n\n')
+
+    except Exception, e:  # pylint: disable=broad-except
+      logging.exception(e)
+      delete_files()
+      payload = json.dumps({"errorcode":1})
+      self.response.write(payload)
+
+    else:
+      #delete_files()
+      payload = json.dumps({"errorcode":0})
+    self.response.write(payload)
+
 class Error(webapp2.RequestHandler):
   def get(self):
     template = JINJA_ENVIRONMENT.get_template('index.html')
@@ -2033,6 +2165,7 @@ application = webapp2.WSGIApplication([
     ('/ViewStream', ViewStream),
     ('/serve/([^/]+)?', ServeHandler),
     ('/UploadImage', UploadImage),
+    ('/UploadUrlImage', UploadUrlImage),
     ('/Login', Login),
     ('/HandleMgmtForm', HandleMgmtForm),
     ('/MgmtPage', MgmtPage),
