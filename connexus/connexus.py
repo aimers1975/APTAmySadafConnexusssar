@@ -54,7 +54,7 @@ cron_rate = -1
 last_run_time = datetime.datetime.now()
 first_run = False
 
-AP_ID_GLOBAL = 'radiant-anchor-696.appspot.com'
+AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}

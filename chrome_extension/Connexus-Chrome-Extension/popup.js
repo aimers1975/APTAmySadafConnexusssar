@@ -11,7 +11,7 @@ function uploadImage() {
     event.preventDefault();
 
     // Connexus POST URL
-    var postUrl = 'http://radiant-anchor-696.appspot.com/UploadUrlImage';
+    var postUrl = 'http://connexusssar.com/UploadUrlImage';
 
     //asynchronous AJAX POST request
     var xhr = new XMLHttpRequest();
