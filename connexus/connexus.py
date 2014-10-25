@@ -1384,6 +1384,56 @@ class ManageStream(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+#takes a user as json input, and returns the list of streams the user owns and is subscribed to
+class ManageStreamService(webapp2.RequestHandler):
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('Json data from call: ' + str(data))
+    userid = data['userid']
+    logging.info('Userid: ' + str(userid))
+
+    #TODO: loop through all streams for sort and find all streams for this owner
+    thisuserstreams = list()
+    thisusersubscriptionlist = list()
+    logging.info("Starting fetch streams owned by for: " + str(userid))
+    stream_query = Stream.query(Stream.owner == userid)
+    rawuserstreams = stream_query.fetch()
+
+    for thisstream in rawuserstreams:
+      thisimagelist = thisstream.imagelist
+      newimagelist = list()
+      #for image in thisimagelist:
+        #currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
+        #newimagelist.append(currentimage)
+      #currentstream = {'streamname':thisstream.streamname,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl}
+      currentstream = {'streamname':thisstream.streamname,'coverurl':thisstream.coverurl}
+      thisuserstreams.append(currentstream)
+
+    logging.info("Starting fetch streams subscribed to by: " + str(userid))
+    stream_query = Stream.query()
+    allstreams = stream_query.fetch()
+    rawusersubscriptionlist = list()
+    for thisstream in allstreams:
+      subusers = thisstream.streamsubscribers
+      if subusers.count(userid) > 0:
+        rawusersubscriptionlist.append(thisstream)
+
+    for thisstream in rawusersubscriptionlist:
+      thisimagelist = thisstream.imagelist
+      newimagelist = list()
+      #for image in thisimagelist:
+        #currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
+        #newimagelist.append(currentimage)
+      currentstream = {'streamname':thisstream.streamname,'coverurl':thisstream.coverurl}
+      thisusersubscriptionlist.append(currentstream)
+
+    logging.info("This users streams: " + str(thisuserstreams))
+    logging.info('subscriptionlist: ' + str(thisusersubscriptionlist))
+    
+    payload = {'streamlist':thisuserstreams,'subscribedstreamlist':thisusersubscriptionlist}
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class ViewStream(webapp2.RequestHandler):
   def post(self):
     data = json.loads(self.request.body)
@@ -2197,6 +2247,7 @@ application = webapp2.WSGIApplication([
     ('/GetStreamData', GetStreamData),
     ('/CreateStream', CreateStream),
     ('/ManageStream', ManageStream),
+    ('/ManageStreamService', ManageStreamService),
     ('/ViewStream', ViewStream),
     ('/serve/([^/]+)?', ServeHandler),
     ('/UploadImage', UploadImage),
