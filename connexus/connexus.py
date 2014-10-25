@@ -54,6 +54,7 @@ cron_rate = -1
 last_run_time = datetime.datetime.now()
 first_run = False
 
+
 AP_ID_GLOBAL = 'connexusssar.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
@@ -248,6 +249,21 @@ ALL_STREAMS_HTML = """
 </table>
 <div>
 """
+
+def convertStreamObjectToList(streamObj):
+    #streamObjList = streamObj.imagelist
+    #logging.info('Image list from Stream object : ' + str(streamObjList))
+    #imageList = list()
+    #for img in streamObjList:
+      #logging.info('img is : ' + str(img))
+      #imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
+      #imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
+      #imageList.append(imgObjList)
+    #logging.info('imageList : ' + str(imageList))
+    #streamList = {'streamName':streamObj.streamname, 'creationDate':streamObj.creationdate, 'viewDateList':streamObj.viewdatelist, 'viewDateListLength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'tagList':streamObj.taglist, 'coverURL':streamObj.coverurl, 'commentList':streamObj.commentlist, 'imageList':imageList}
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist}
+    #streamList = {'streamName':streamObj.streamname, 'coverURL':streamObj.coverurl}
+    return streamList
 
 def olderthanhour(checktimestring):
   hourago = datetime.datetime.now() - timedelta(minutes=30)
@@ -1721,6 +1737,26 @@ class ViewAllStreams(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+class ViewAllStreamsService(webapp2.RequestHandler):
+  def post(self):
+    logging.info('View all streams has no json input.')
+    totalstreams = list()
+    #coverurls = list()
+
+    logging.info('Check if stream exists')
+    allstream_query = Stream.query().order(Stream.creationdate)
+    allstreamsbycreation = allstream_query.fetch()
+    logging.info('Query returned: ' + str(allstreamsbycreation))
+
+    for stream in allstreamsbycreation:
+      totalstreams.append(convertStreamObjectToList(stream))
+
+    logging.info("Total streams: " + str(totalstreams))
+    #logging.info("Coverurls: " + str(coverurls))
+    payload = {'streamlist':totalstreams}
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class SearchAutocompleteValues(webapp2.RequestHandler):
   def get(self):
     try:
@@ -2181,6 +2217,7 @@ application = webapp2.WSGIApplication([
     ('/SubscribeStream', SubscribeStream),
     ('/GetAllImages', GetAllImages),
     ('/ViewAllStreams', ViewAllStreams),
+    ('/ViewAllStreamsService', ViewAllStreamsService),
     ('/SearchAutocompleteValues', SearchAutocompleteValues),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
