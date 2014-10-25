@@ -46,7 +46,7 @@ EXPIRATION_TIME = 300  # seconds
 tmp_filenames_to_clean_up = []
 gcs.set_default_retry_params(my_default_retry_params)
 #this is the list of streams, keys are the userid that owns the stream, each value is a list of stream
-ds_key = ndb.Key('connexusssar', 'connexusssar')
+ds_key = ndb.Key('connexusssar2', 'connexusssar2')
 
 cronrate = 'five'
 myimages = list()
@@ -55,7 +55,7 @@ last_run_time = datetime.datetime.now()
 first_run = False
 
 
-AP_ID_GLOBAL = 'connexusssar.appspot.com'
+AP_ID_GLOBAL = 'connexusssar2.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -261,6 +261,13 @@ def convertStreamObjectToList(streamObj):
       #imageList.append(imgObjList)
     #logging.info('imageList : ' + str(imageList))
     #streamList = {'streamName':streamObj.streamname, 'creationDate':streamObj.creationdate, 'viewDateList':streamObj.viewdatelist, 'viewDateListLength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'tagList':streamObj.taglist, 'coverURL':streamObj.coverurl, 'commentList':streamObj.commentlist, 'imageList':imageList}
+    logging.info("Trying to see if we need to create a cover url.")
+    streamObjList = streamObj.imagelist
+    if streamObj.coverurl == "":
+      if len(streamObjList) > 0:
+        logging.info("Need a coverurl. Assinging: " + str(streamObjList[0].imagefileurl))
+        streamObj.coverurl = streamObjList[0].imagefileurl 
+
     streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist}
     #streamList = {'streamName':streamObj.streamname, 'coverURL':streamObj.coverurl}
     return streamList
@@ -469,15 +476,16 @@ def delete_files():
     #  logging.info('Deleting file %s\n' % filename)
       try:
         #gcs.delete(filename)
-        gcs.delete('/connexusssar.appspot.com/ColorFlag/066e0e0f-4bd7-11e4-9d1d-710007c381d9')
+        pass
       except gcs.NotFoundError:
         logging.info("File not found error")
         pass
 
 def delete_images(imagefiles):
   for filename in imagefiles:
-    logging.info('Deleting image: ' + str(filename))
+
     try:
+      logging.info('Deleting image: ' + str(filename))
       gcs.delete(filename)
       #blobstore.delete(filename)
       logging.info('Finished deleting file')
@@ -601,7 +609,7 @@ class UploadHandler(webapp2.RequestHandler):
                           result['thumbnailUrl'] = result['url'] +\
                               THUMBNAIL_MODIFICATOR
                           logging.info("Thumbnail url is: " + str(result['thumbnailUrl']))
-                          myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+                          myimage = Image(parent=ndb.Key('connexusssar2', 'connexusssar2'))
                           myimage.imageid = imageid
                           myimage.imagefilename = result['name']
                           myimage.comments = comments
@@ -1288,7 +1296,7 @@ class CreateStream(webapp2.RequestHandler):
 
 
       if not alreadypresent:
-        stream = Stream(parent=ndb.Key('connexusssar', 'connexusssar'))
+        stream = Stream(parent=ndb.Key('connexusssar2', 'connexusssar2'))
         stream.streamname = streamname
 
         creationdate = str(datetime.datetime.now().date())
@@ -1382,6 +1390,27 @@ class ManageStream(webapp2.RequestHandler):
     logging.info('subscriptionlist: ' + str(thisusersubscriptionlist))
     
     payload = {'streamlist':thisuserstreams,'subscribedstreamlist':thisusersubscriptionlist}
+    result = json.dumps(payload)
+    self.response.write(result)
+
+class ViewStreamService(webapp2.RequestHandler):
+  def post(self):
+    data = json.loads(self.request.body)
+    logging.info('Input jsonis: ' + str(data))
+    streamname = data['streamname']
+    try:
+      present_query = Stream.query(Stream.streamname == streamname)
+      existsstream = present_query.get()
+      logging.info('Query returned: ' + str(existsstream))
+      existsstreamdatelist = existsstream.viewdatelist
+      existsstreamdatelist.append(str(datetime.datetime.now()))
+      existsstream.viewdatelistlength = len(existsstreamdatelist)
+      existsstream.viewdatelist = existsstreamdatelist
+      existsstream.put()
+      payload = {'stream':convertStreamObjectToList(existsstream)}
+      logging.info("Payload output is: " + str(payload))
+    except:
+      payload = {"errorcode":10} #Errorcode 10 is stream doesn't exist
     result = json.dumps(payload)
     self.response.write(result)
 
@@ -1521,7 +1550,7 @@ class UploadImage(webapp2.RequestHandler):
     try:
       if not existsstream == None:
         create_file(filename,imagefile,contenttype)
-        myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+        myimage = Image(parent=ndb.Key('connexusssar2', 'connexusssar2'))
         logging.info('Created imagefile')
         imagefileurl = "http://storage.googleapis.com" + str(filename)
         myimage.imageid = imageid
@@ -1652,7 +1681,7 @@ class UploadUrlImage(webapp2.RequestHandler):
       if not existsstream == None:
         create_file(filename,imagefile,contenttype)
         #create_file(filename,imgbytes,contenttype)
-        myimage = Image(parent=ndb.Key('connexusssar', 'connexusssar'))
+        myimage = Image(parent=ndb.Key('connexusssar2', 'connexusssar2'))
         logging.info('Created imagefile')
         imagefileurl = "http://storage.googleapis.com" + str(filename)
         myimage.imageid = imageid
@@ -1802,6 +1831,10 @@ class SearchStreams(webapp2.RequestHandler):
     streamObjList = streamObj.imagelist
     #logging.info('Image list from Stream object : ' + str(streamObjList))
     imageList = list()
+
+    if streamObj.coverurl == None:
+      if streamObjList.length > 0:
+        streamObj.coverurl == streamObjList[0].imagefileurl
     for img in streamObjList:
       #logging.info('img is : ' + str(img))
       imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
