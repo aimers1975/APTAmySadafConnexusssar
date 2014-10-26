@@ -263,14 +263,31 @@ def convertStreamObjectToList(streamObj):
     #streamList = {'streamName':streamObj.streamname, 'creationDate':streamObj.creationdate, 'viewDateList':streamObj.viewdatelist, 'viewDateListLength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'tagList':streamObj.taglist, 'coverURL':streamObj.coverurl, 'commentList':streamObj.commentlist, 'imageList':imageList}
     logging.info("Trying to see if we need to create a cover url.")
     streamObjList = streamObj.imagelist
+    imagelist = list()
+    imageList = list()
     if streamObj.coverurl == "":
       if len(streamObjList) > 0:
         logging.info("Need a coverurl. Assinging: " + str(streamObjList[0].imagefileurl))
         streamObj.coverurl = streamObjList[0].imagefileurl 
+    imagelistlength = len(streamObjList)
+    for x in range(0,imagelistlength):
+      imagelist.append(streamObjList[x].imagefileurl)
+    logging.info("The imagelist is: " + str(imagelist))
 
-    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist}
-    #streamList = {'streamName':streamObj.streamname, 'coverURL':streamObj.coverurl}
+    for img in streamObjList:
+      #logging.info('img is : ' + str(img))
+      imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
+      imageList.append(imgObjList)
+
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imageurllist':imagelist, 'imagelist':imageList}
+   
     return streamList
+
+
+
+
+
+
 
 def olderthanhour(checktimestring):
   hourago = datetime.datetime.now() - timedelta(minutes=30)
@@ -1395,9 +1412,12 @@ class ManageStream(webapp2.RequestHandler):
 
 class ViewStreamService(webapp2.RequestHandler):
   def post(self):
-    data = json.loads(self.request.body)
-    logging.info('Input jsonis: ' + str(data))
-    streamname = data['streamname']
+    try: 
+      data = json.loads(self.request.body)
+      logging.info('Input jsonis: ' + str(data))
+      streamname = data['streamname']
+    except:
+      streamname = "IndianFoodColored"
     try:
       present_query = Stream.query(Stream.streamname == streamname)
       existsstream = present_query.get()
@@ -1884,9 +1904,9 @@ class SearchStreams(webapp2.RequestHandler):
     #logging.info('Image list from Stream object : ' + str(streamObjList))
     imageList = list()
 
-    if streamObj.coverurl == None:
+    if streamObj.coverurl == "":
       if streamObjList.length > 0:
-        streamObj.coverurl == streamObjList[0].imagefileurl
+        streamObj.coverurl = streamObjList[0].imagefileurl
     for img in streamObjList:
       #logging.info('img is : ' + str(img))
       imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
@@ -2285,6 +2305,7 @@ application = webapp2.WSGIApplication([
     ('/ManageStream', ManageStream),
     ('/ManageStreamService', ManageStreamService),
     ('/ViewStream', ViewStream),
+    ('/ViewStreamService', ViewStreamService),
     ('/serve/([^/]+)?', ServeHandler),
     ('/UploadImage', UploadImage),
     ('/UploadUrlImage', UploadUrlImage),
