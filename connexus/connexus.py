@@ -263,23 +263,21 @@ def convertStreamObjectToList(streamObj):
     #streamList = {'streamName':streamObj.streamname, 'creationDate':streamObj.creationdate, 'viewDateList':streamObj.viewdatelist, 'viewDateListLength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'tagList':streamObj.taglist, 'coverURL':streamObj.coverurl, 'commentList':streamObj.commentlist, 'imageList':imageList}
     logging.info("Trying to see if we need to create a cover url.")
     streamObjList = streamObj.imagelist
-    imagelist = list()
+
     imageList = list()
     if streamObj.coverurl == "":
       if len(streamObjList) > 0:
         logging.info("Need a coverurl. Assinging: " + str(streamObjList[0].imagefileurl))
         streamObj.coverurl = streamObjList[0].imagefileurl 
     imagelistlength = len(streamObjList)
-    for x in range(0,imagelistlength):
-      imagelist.append(streamObjList[x].imagefileurl)
-    logging.info("The imagelist is: " + str(imagelist))
+
 
     for img in streamObjList:
       #logging.info('img is : ' + str(img))
       imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
       imageList.append(imgObjList)
 
-    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imageurllist':imagelist, 'imagelist':imageList}
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':imageList}
    
     return streamList
 
