@@ -1533,7 +1533,18 @@ class ViewStreamService(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
-
+class NearbyStreams(webapp2.RequestHandler):
+  def post(self):
+    #data = json.loads(self.request.body)
+    #logging.info('Json data from call: ' + str(data))
+    #latitude = data['latitude']
+    #longitude = data['longitude']
+    #logging.info('Latitude received is: ' + str(latitude) + " Longitude received is: " + str(longitude))
+    logging.info("self request: " + str(self.request))
+    logging.info("nearby streams called")
+    payload = {'test':'test'}
+    result = json.dumps(payload)
+    self.response.write(result)
 
 #takes a user as json input, and returns the list of streams the user owns and is subscribed to
 class ManageStreamService(webapp2.RequestHandler):
@@ -2425,6 +2436,7 @@ application = webapp2.WSGIApplication([
     ('/GetAllImages', GetAllImages),
     ('/ViewAllStreams', ViewAllStreams),
     ('/ViewAllStreamsService', ViewAllStreamsService),
+    ('/NearbyStreams', NearbyStreams),
     ('/SearchAutocompleteValues', SearchAutocompleteValues),
     ('/SearchStreams', SearchStreams),
     ('/GetMostViewedStreams', GetMostViewedStreams),
