@@ -57,7 +57,7 @@ last_run_time = datetime.datetime.now()
 first_run = False
 
 
-AP_ID_GLOBAL = 'connexusssar2.appspot.com'
+AP_ID_GLOBAL = 'sonic-fiber-734.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -2090,6 +2090,75 @@ class SearchStreams(webapp2.RequestHandler):
     result = json.dumps(payload)
     self.response.write(result)
 
+class SearchStreamsService(webapp2.RequestHandler):
+  def alreadyExists(self, resultList, newItem):
+    for item in resultList:
+      #logging.info('Looking at streamname: ' + str(item['streamname']))
+      if newItem.streamname == item['streamname']:
+        #logging.info('Found')
+        return True
+    return False
+
+  def convertStreamObjToList(self, streamObj):
+    streamObjList = streamObj.imagelist
+    #logging.info('Image list from Stream object : ' + str(streamObjList))
+    imageList = list()
+
+    if streamObj.coverurl == "":
+      if streamObjList.length > 0:
+        streamObj.coverurl = streamObjList[0].imagefileurl
+    for img in streamObjList:
+      #logging.info('img is : ' + str(img))
+      imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
+      imageList.append(imgObjList)
+    #logging.info('imageList : ' + str(imageList))
+    streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':imageList}
+    return streamList
+
+  def post(self):
+    try:
+      logging.info('Entering SearchStreamsService Handler')
+      data = json.loads(self.request.body)
+      logging.info('this is what Im looking for: ' + str(data))
+       
+      streamFilterList = data['streamname']
+      logging.info('Stream filter: ' + str(streamFilterList)) 
+
+      #get all streams
+      listOfStreams = list()
+
+      logging.info("Query to get all the streams")
+      allstreams_query = Stream.query().order(Stream.creationdate)
+      listOfStreams = allstreams_query.fetch()
+      logging.info('Query for all streams returned:' + str(listOfStreams))
+
+      searchResultList = list()
+      for streamItem in listOfStreams:
+        if streamFilterList in streamItem.streamname:
+          searchResultList.append(self.convertStreamObjToList(streamItem))
+          #logging.info('Stream found with name match: ' + str(streamItem))
+
+      for streamItem in listOfStreams:
+        tagList = streamItem.taglist
+        for tag in tagList:
+          if streamFilterList in tag:
+            #if stream is not already in searchResultList then add it
+            if self.alreadyExists(searchResultList, streamItem):
+              logging.info('Stream ' + str(streamItem) + 'has been already found.')
+            else:
+              searchResultList.append(self.convertStreamObjToList(streamItem))
+              #logging.info('Stream found with tag match: ' + str(streamItem))
+      logging.info("test")
+      payload = {'streamlist':searchResultList}
+      logging.info("SearchResultList: " + str(searchResultList))
+
+      logging.info("SearchStreamService payload: " + str(payload))
+    except:
+      payload = {'errorcode':6}
+
+    result = json.dumps(payload)
+    self.response.write(result)
+
 class ViewAllPageHandler(webapp2.RequestHandler):
   def post(self):
     try:
@@ -2461,6 +2530,7 @@ application = webapp2.WSGIApplication([
     ('/NearbyStreams', NearbyStreams),
     ('/SearchAutocompleteValues', SearchAutocompleteValues),
     ('/SearchStreams', SearchStreams),
+    ('/SearchStreamsService', SearchStreamsService),
     ('/GetMostViewedStreams', GetMostViewedStreams),
     ('/gcswrite', GCSHandler),
     ('/gcs/serve', GCSServingHandler),
