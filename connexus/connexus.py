@@ -10,6 +10,7 @@ import datetime
 from datetime import timedelta
 from time import gmtime, strftime
 from google.appengine.ext import ndb
+from io import StringIO
 import webapp2
 import logging
 import json
@@ -511,6 +512,107 @@ def delete_images(imagefiles):
 def cleanup(blob_keys):
     blobstore.delete(blob_keys)
 
+class AndroidUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
+
+    def initialize(self, request, response):
+        super(AndroidUploadHandler, self).initialize(request, response)
+        self.response.headers['Access-Control-Allow-Origin'] = '*'
+        self.response.headers[
+            'Access-Control-Allow-Methods'
+        ] = 'OPTIONS, HEAD, GET, POST, PUT'
+        self.response.headers[
+            'Access-Control-Allow-Headers'
+        ] = 'Content-Type, Content-Range, Content-Disposition'
+
+
+    def handle_android_upload(self):
+        try:
+            streamname = self.request.headers['Streamname']
+            logging.info('streamname is: ' + str(streamname))
+            logging.info('Check if stream exists')
+            present_query = Stream.query(Stream.streamname == streamname)
+            existsstream = present_query.get()
+            comments = ""
+            if not existsstream == None:
+              try:
+                comments = self.request.get.headers['comments']
+              except:
+                pass
+              try:
+                logging.info("Headers is: " + str(self.request.headers))
+                latlong = self.request.headers['X-Appengine-Citylatlong']
+                coord = latlong.split(',')
+                latitude = float(coord[0])
+                longitude = float(coord[1])
+                logging.info("latitude: " + str(latitude))
+                logging.info("longitude: " + str(longitude))
+              except:
+                logging.info("Couldn't get location, defaulting to pflugerville tx")
+                latitude = 30.439370
+                longitude = -97.620004
+              imageid = str(uuid.uuid1())
+              bucket_name = os.environ.get('BUCKET_NAME', app_identity.get_default_gcs_bucket_name())
+              logging.info("My bucket name is: " + str(bucket_name))
+              bucket = '/' + bucket_name
+              filename = bucket + '/' + streamname + '/' + imageid
+              try:
+                myimagefile = self.request.get('imageFile')
+              except:
+                logging.info("Imagefile not retrieved from self.request")
+              result = {}
+              result['name'] = streamname # TODO need to change
+              creationdate = str(datetime.datetime.now().date())
+              logging.info("starting to write file to store")
+            # Create a GCS file with GCS client.
+              with gcs.open(filename, 'w') as f:
+                f.write(myimagefile)
+            # Blobstore API requires extra /gs to distinguish against blobstore files.
+              blobstore_filename = '/gs' + filename
+              blob_key = blobstore.create_gs_key(blobstore_filename)
+              logging.info("Trying to get url for blob key: " + str(blob_key))
+              try:
+                result['url'] = images.get_serving_url(
+                    blob_key,
+                )
+              except:
+                logging.info("Could not get serving url")
+                result['url'] = ""
+              logging.info("Result url" + str(result['url']))
+              myimage = Image(parent=ndb.Key('connexusssar2', 'connexusssar2'))
+              myimage.imageid = imageid
+              myimage.imagefilename = result['name']
+              myimage.comments = comments
+              myimage.imagefileurl = result['url']
+              myimage.imagecreationdate = creationdate
+              myimage.imagelatitude = latitude
+              myimage.imagelongitude = longitude
+              myimage.imagestreamname = streamname
+              myimage.put()
+              thisimagelist = existsstream.imagelist
+              thisimagelist.append(myimage)
+              existsstream.imagelist = thisimagelist
+              existsstream.put()
+        except:
+            logging.info("exception uploading files")
+        return result
+
+    def options(self):
+        pass
+
+    def head(self):
+        pass
+
+    def get(self):
+        pass
+
+    def post(self):
+        logging.info("Post request: " + str(self.request))
+        result = {'file': self.handle_android_upload()['url']}
+        logging.info("Post result: " + str(result))
+        s = json.dumps(result, separators=(',', ':'))
+        logging.info("Post result writing is: " + str(s))
+        self.response.write(s)
+
 
 class UploadHandler(webapp2.RequestHandler):
 
@@ -599,9 +701,8 @@ class UploadHandler(webapp2.RequestHandler):
                 logging.info("Content type is: " + str(result['type']))
                 result['size'] = self.get_file_size(fieldStorage.file)
                 if self.validate(result):
-                #write to cloud storage
-                #blob_key = str(
-                 #   self.write_blob(fieldStorage.value, result))
+                  logging.info("Checking type on file write is: " + str(type(fieldStorage.value)))
+                  logging.info("Fieldstorage value is: " + str(fieldStorage.value))
             # Create a GCS file with GCS client.
                   with gcs.open(filename, 'w') as f:
                       f.write(fieldStorage.value)
@@ -2376,6 +2477,7 @@ application = webapp2.WSGIApplication([
     ('/serve/([^/]+)?', ServeHandler),
     ('/UploadImage', UploadImage),
     ('/UploadUrlImage', UploadUrlImage),
+    ('/AndroidUploadHandler', AndroidUploadHandler),
     ('/Login', Login),
     ('/HandleMgmtForm', HandleMgmtForm),
     ('/MgmtPage', MgmtPage),
