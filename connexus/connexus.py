@@ -57,7 +57,7 @@ last_run_time = datetime.datetime.now()
 first_run = False
 
 
-AP_ID_GLOBAL = 'sonic-fiber-734.appspot.com'
+AP_ID_GLOBAL = 'connexusssar2.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
