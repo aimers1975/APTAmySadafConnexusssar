@@ -24,6 +24,7 @@ import uuid
 import base64
 import string
 import jinja2
+import geo
 
 
 #Probably not necessary to change default retry params, but here for example
@@ -250,6 +251,14 @@ ALL_STREAMS_HTML = """
 </table>
 <div>
 """
+
+def convertJsonImageList(imageList):
+    imagelist = list()
+    imagelistlength = len(imageList)
+    for img in imageList:
+      imageObject = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid, 'imagestreamname':img.imagestreamname}
+      imagelist.append(imageObject)
+    return imagelist
 
 def convertStreamObjectToList(streamObj):
     #streamObjList = streamObj.imagelist
@@ -1535,14 +1544,27 @@ class ViewStreamService(webapp2.RequestHandler):
 
 class NearbyStreams(webapp2.RequestHandler):
   def post(self):
-    #data = json.loads(self.request.body)
-    #logging.info('Json data from call: ' + str(data))
-    #latitude = data['latitude']
-    #longitude = data['longitude']
-    #logging.info('Latitude received is: ' + str(latitude) + " Longitude received is: " + str(longitude))
-    logging.info("self request: " + str(self.request))
-    logging.info("nearby streams called")
-    payload = {'test':'test'}
+    data = json.loads(self.request.body)
+    imagelist = list()
+    logging.info('Json data from call: ' + str(data))
+    latitude = round(data['latitude'],5)
+    longitude = round(data['longitude'],5)
+    logging.info('Latitude received is: ' + str(latitude) + " Longitude received is: " + str(longitude))
+    allimage_query = Image.query().order(Image.imagecreationdate)
+    allimagesbycreation = allimage_query.fetch()
+    for thisimage in allimagesbycreation:
+      logging.info('Latitude for this image is: ' + str(latitude) + " Longitude for this image is: " + str(longitude))
+      requestlocation=geo.xyz(latitude,longitude)
+      roundimagelatitude = round(thisimage.imagelatitude,5)
+      roundimagelongitude = round(thisimage.imagelongitude,5)
+      imagelocation=geo.xyz(roundimagelatitude,roundimagelongitude)
+      distance = geo.distance(requestlocation,imagelocation)
+      logging.info("This distance is: " + str(distance))
+      if(distance < 5000): # less than 5000 meters is approximately 3 miles
+        imagelist.append(thisimage)
+    logging.info("The final imagelist is: " + str(imagelist))
+    imagelist = convertJsonImageList(imagelist)
+    payload = {'imageList':imagelist}
     result = json.dumps(payload)
     self.response.write(result)
 
