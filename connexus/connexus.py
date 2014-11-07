@@ -57,7 +57,7 @@ last_run_time = datetime.datetime.now()
 first_run = False
 
 
-AP_ID_GLOBAL = 'sonic-fiber-734.appspot.com'
+AP_ID_GLOBAL = 'connexusssar2.appspot.com'
 
 BAD_SCRIPT = """<script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -548,11 +548,11 @@ class AndroidUploadHandler(blobstore_handlers.BlobstoreUploadHandler):
               except:
                 pass
               try:
-                logging.info("Headers is: " + str(self.request.headers))
-                latlong = self.request.headers['X-Appengine-Citylatlong']
-                coord = latlong.split(',')
-                latitude = float(coord[0])
-                longitude = float(coord[1])
+                logging.info("Headers is: " + str(self.request.headers)) #Droidlatitude
+                #latlong = self.request.headers['X-Appengine-Citylatlong']
+                #coord = latlong.split(',')
+                latitude = float(self.request.headers['Droidlatitude'])
+                longitude = float(self.request.headers['Droidlongitude'])
                 logging.info("latitude: " + str(latitude))
                 logging.info("longitude: " + str(longitude))
               except:
@@ -1559,8 +1559,8 @@ class NearbyStreams(webapp2.RequestHandler):
       roundimagelongitude = round(thisimage.imagelongitude,5)
       imagelocation=geo.xyz(roundimagelatitude,roundimagelongitude)
       distance = geo.distance(requestlocation,imagelocation)
-      logging.info("This distance is: " + str(distance))
-      if(distance < 5000): # less than 5000 meters is approximately 3 miles
+      logging.info("Distance is: " + str(distance) + " ImgStrm: " + str(thisimage.imagestreamname) + ' Reqloc: ' + str(requestlocation) + ' Imageloc: ' + str(imagelocation) + ' Imagename: ' + str(thisimage.imagefilename))
+      if(distance < 12000): # less than 12000 meters is approximately 7 miles
         imagelist.append(thisimage)
     logging.info("The final imagelist is: " + str(imagelist))
     imagelist = convertJsonImageList(imagelist)
@@ -1590,6 +1590,9 @@ class ManageStreamService(webapp2.RequestHandler):
         #currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         #newimagelist.append(currentimage)
       #currentstream = {'streamname':thisstream.streamname,'viewdatelist':thisstream.viewdatelist,'viewdatelistlength':thisstream.viewdatelistlength,'owner':thisstream.owner,'subscribers':thisstream.streamsubscribers,'taglist':thisstream.taglist,'coverurl':thisstream.coverurl,'commentlist':thisstream.commentlist,'coverurl':thisstream.coverurl}
+      if thisstream.coverurl == "":
+        if len(thisimagelist) > 0:
+          thisstream.coverurl = thisimagelist[0].imagefileurl
       currentstream = {'streamname':thisstream.streamname,'coverurl':thisstream.coverurl}
       thisuserstreams.append(currentstream)
 
@@ -2033,17 +2036,17 @@ class SearchStreams(webapp2.RequestHandler):
 
   def convertStreamObjToList(self, streamObj):
     streamObjList = streamObj.imagelist
-    #logging.info('Image list from Stream object : ' + str(streamObjList))
+    logging.info('Image list from Stream object : ' + str(streamObjList))
     imageList = list()
 
     if streamObj.coverurl == "":
       if streamObjList.length > 0:
         streamObj.coverurl = streamObjList[0].imagefileurl
     for img in streamObjList:
-      #logging.info('img is : ' + str(img))
+      logging.info('img is : ' + str(img))
       imgObjList = {'comments':img.comments, 'imagecreationdate':img.imagecreationdate, 'imagefilename':img.imagefilename, 'imagefileurl':img.imagefileurl, 'imageid':img.imageid}
       imageList.append(imgObjList)
-    #logging.info('imageList : ' + str(imageList))
+    logging.info('imageList : ' + str(imageList))
     streamList = {'streamname':streamObj.streamname, 'creationdate':streamObj.creationdate, 'viewdatelist':streamObj.viewdatelist, 'viewdatelistlength':streamObj.viewdatelistlength, 'owner':streamObj.owner, 'subscribers':streamObj.streamsubscribers, 'taglist':streamObj.taglist, 'coverurl':streamObj.coverurl, 'commentlist':streamObj.commentlist, 'imagelist':imageList}
     return streamList
 
@@ -2105,7 +2108,7 @@ class SearchStreamsService(webapp2.RequestHandler):
     imageList = list()
 
     if streamObj.coverurl == "":
-      if streamObjList.length > 0:
+      if len(streamObjList) > 0:
         streamObj.coverurl = streamObjList[0].imagefileurl
     for img in streamObjList:
       #logging.info('img is : ' + str(img))
@@ -2130,13 +2133,14 @@ class SearchStreamsService(webapp2.RequestHandler):
       logging.info("Query to get all the streams")
       allstreams_query = Stream.query().order(Stream.creationdate)
       listOfStreams = allstreams_query.fetch()
-      logging.info('Query for all streams returned:' + str(listOfStreams))
+      #logging.info('Query for all streams returned:' + str(listOfStreams))
 
       searchResultList = list()
       for streamItem in listOfStreams:
+        #logging.info('Stream found with name match: ' + str(streamItem))
         if streamFilterList in streamItem.streamname:
           searchResultList.append(self.convertStreamObjToList(streamItem))
-          #logging.info('Stream found with name match: ' + str(streamItem))
+          
 
       for streamItem in listOfStreams:
         tagList = streamItem.taglist
@@ -2147,7 +2151,7 @@ class SearchStreamsService(webapp2.RequestHandler):
               logging.info('Stream ' + str(streamItem) + 'has been already found.')
             else:
               searchResultList.append(self.convertStreamObjToList(streamItem))
-              #logging.info('Stream found with tag match: ' + str(streamItem))
+              logging.info('Stream found with tag match: ' + str(streamItem))
       logging.info("test")
       payload = {'streamlist':searchResultList}
       logging.info("SearchResultList: " + str(searchResultList))
