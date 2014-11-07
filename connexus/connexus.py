@@ -1560,7 +1560,7 @@ class NearbyStreams(webapp2.RequestHandler):
       imagelocation=geo.xyz(roundimagelatitude,roundimagelongitude)
       distance = geo.distance(requestlocation,imagelocation)
       logging.info("Distance is: " + str(distance) + " ImgStrm: " + str(thisimage.imagestreamname) + ' Reqloc: ' + str(requestlocation) + ' Imageloc: ' + str(imagelocation) + ' Imagename: ' + str(thisimage.imagefilename))
-      if(distance < 12000): # less than 12000 meters is approximately 7 miles
+      if(distance < 8000): # less than 12000 meters is approximately 7 miles
         imagelist.append(thisimage)
     logging.info("The final imagelist is: " + str(imagelist))
     imagelist = convertJsonImageList(imagelist)
