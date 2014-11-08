@@ -1611,6 +1611,9 @@ class ManageStreamService(webapp2.RequestHandler):
       #for image in thisimagelist:
         #currentimage = {'imageid':image.imageid,'imagefilename':image.imagefilename,'comments':image.comments,'imagecreationdate':image.imagecreationdate,'imagefileurl':image.imagefileurl}
         #newimagelist.append(currentimage)
+      if thisstream.coverurl == "":
+        if len(thisimagelist) > 0:
+          thisstream.coverurl = thisimagelist[0].imagefileurl
       currentstream = {'streamname':thisstream.streamname,'coverurl':thisstream.coverurl}
       thisusersubscriptionlist.append(currentstream)
 
